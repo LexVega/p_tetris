@@ -267,6 +267,7 @@ class Input:
             case 'd': return 'RIGHT'
             case 's': return 'DOWN'
             case 'w': return 'UP'
+            case ' ': return 'SPACE'
             case _: return None
     
     WIN_KEY_MAP = {
@@ -330,6 +331,9 @@ while not game.game_over:
             game.rotate()
         elif key == 'DOWN' and game.can_move(dy=1):
             game.move(y=1)
+        elif key == 'SPACE':
+            while game.can_move(dy=1):
+                game.move(y=1)
     
     # Handle gravity
     if acc >= gravity_interval:
