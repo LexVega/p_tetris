@@ -161,11 +161,9 @@ class Game:
                     self.field[self.current_piece.y + j][self.current_piece.x + i] = cell
     
     def clear_lines(self):
-        self.field = [row for row in self.field if " " in row]  # keep only non-full rows
-        cleared_lines = 0
-        while len(self.field) < self.HEIGHT:
-            cleared_lines += 1
-            self.field.insert(0, [' '] * self.WIDTH)
+        new_field = [row for row in self.field if any(c == " " for c in row)]
+        cleared_lines = self.HEIGHT - len(new_field)
+        self.field = [[' '] * self.WIDTH for _ in range(cleared_lines)] + new_field
         self.score += cleared_lines * cleared_lines * 100
         self.cleared_lines += cleared_lines
     
