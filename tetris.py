@@ -28,16 +28,16 @@ class Piece:
         'Z': [" ZZ", "ZZ "],     # Z
     }
 
-    def __init__(self, shape, kind):
-        self.shape = [list(row) for row in shape]
+    def __init__(self, kind):
         self.kind = kind
+        self.shape = [list(row) for row in self.FIGURES[kind]]
         self.x = 0
         self.y = 0
     
     @property
     def width(self):
         return max(len(row) for row in self.shape)
-        
+    
     @property
     def height(self):
         return len(self.shape)
@@ -48,9 +48,8 @@ class Piece:
         return [list(row) for row in zip(*self.shape[::-1])]
     
     @classmethod
-    def new(self):
-        kind, shape = random.choice(list(self.FIGURES.items()))
-        return self(shape, kind)
+    def random(self):
+        return self(random.choice(list(self.FIGURES)))
 
 COLORS = {
     'I': "\033[96m",  # Cyan
@@ -85,8 +84,8 @@ class Game:
         return time.perf_counter() - self.game_started_at
     
     def spawn_piece(self):
-        self.current_piece = self.next_piece or Piece.new()
-        self.next_piece = Piece.new()
+        self.current_piece = self.next_piece or Piece.random()
+        self.next_piece = Piece.random()
         self.current_piece.x = (self.WIDTH - self.current_piece.width) // 2
         self.current_piece.y = 0
         if not self.can_move(0, 0):
