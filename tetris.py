@@ -60,6 +60,7 @@ class Piece:
         """Return rotated shape (clockwise) without modifying self"""
         return [list(row) for row in zip(*self.shape[::-1])]
 
+
 def random_piece_generator() -> Iterator[Piece]:
     while True:
         yield Piece(random.choice(list(Piece.FIGURES)))
@@ -71,15 +72,19 @@ def bag_piece_generator() -> Iterator[Piece]:
         for piece in bag:
             yield piece
 
+
 class Game:
     WIDTH = 10
     HEIGHT = 20
     
+    H_BORDER = "+" + "-" * WIDTH + "+"
+    W_BORDER_CHAR = "|"
     PREVIEW_BOX_START_LINE = 4
     PREVIEW_BOX_SIZE = 4
     PREVIEW_BOX_END_LINE = PREVIEW_BOX_START_LINE + PREVIEW_BOX_SIZE
     
-    GHOST_PIECE_CHAR = "@"
+    GHOST_CHAR = "@"
+    FIG_CHAR = "@"
     
     def __init__(self, piece_generator: Callable[[], Iterator[Piece]]):
         self.field = [[" "] * self.WIDTH for _ in range(self.HEIGHT)]
@@ -181,14 +186,14 @@ class Game:
         os.system(CLEAR)
         temp = self._compose_field_with_current_piece()
 
-        print("+" + "-" * self.WIDTH + "+")
+        print(self.H_BORDER)
 
         for y in range(self.HEIGHT):
             row_str = self._render_field_row(temp[y])
             row_str += self._render_sidebar(y)
             print(row_str)
 
-        print("+" + "-" * self.WIDTH + "+")
+        print(self.H_BORDER)
         self._changed = False
 
     def _compose_field_with_current_piece(self):
@@ -202,7 +207,7 @@ class Game:
                     gy = ghost_y + j
                     gx = self.current_piece.x + i
                     if 0 <= gy < self.HEIGHT and temp[gy][gx] == " ":
-                        temp[gy][gx] = self.GHOST_PIECE_CHAR
+                        temp[gy][gx] = self.GHOST_CHAR
 
         # current piece
         for j, row in enumerate(self.current_piece.shape):
@@ -213,16 +218,15 @@ class Game:
         return temp
 
     def _render_field_row(self, row):
-        out = "|"
+        out = ''
         for char in row:
             if char in COLORS:
-                out += f"{COLORS[char]}@{COLORS['RESET']}"
-            elif char == self.GHOST_PIECE_CHAR:
-                out += f"{COLORS['RESET']}{self.GHOST_PIECE_CHAR}{COLORS['RESET']}"
+                out += f"{COLORS[char]}{self.FIG_CHAR}{COLORS['RESET']}"
+            elif char == self.GHOST_CHAR:
+                out += f"{COLORS['RESET']}{self.GHOST_CHAR}{COLORS['RESET']}"
             else:
                 out += " "
-        out += "|"
-        return out
+        return self.W_BORDER_CHAR + out + self.W_BORDER_CHAR
 
     def _render_sidebar(self, y):
         sidebar = {
@@ -250,7 +254,7 @@ class Game:
         out = ""
         for c in preview_box[j]:
             if c in COLORS:
-                out += f"{COLORS[c]}@{COLORS['RESET']}"
+                out += f"{COLORS[c]}{self.FIG_CHAR}{COLORS['RESET']}"
             else:
                 out += " "
         return out
@@ -323,7 +327,6 @@ last = time.perf_counter()
 acc = 0.0
 REFRESH_RATE = 0.01
 
-
 while not game.game_over:
     now = time.perf_counter()
     acc += time.perf_counter() - last
@@ -353,3 +356,4 @@ while not game.game_over:
         game.draw()
         
     time.sleep(REFRESH_RATE)
+    
