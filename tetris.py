@@ -180,7 +180,6 @@ class Game:
             self.merge()
             self.clear_lines()
             self.spawn_piece()
-        
         self._changed = True
 
     def draw(self):
@@ -347,6 +346,8 @@ while not game.game_over:
         elif key == 'SPACE':
             while game.can_move(dy=1):
                 game.move(y=1)
+            game.process()
+            acc = 0
     
     # Handle gravity
     if acc >= gravity_interval:
