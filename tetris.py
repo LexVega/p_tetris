@@ -84,6 +84,8 @@ class Game:
         self.game_over = False
         self.game_started_at = time.perf_counter()
         self.score = 0
+        self.cleared_lines = 0
+        self.level = 1
         self._changed = False
     
     @property
@@ -152,6 +154,7 @@ class Game:
             cleared_lines += 1
             self.field.insert(0, [' '] * self.WIDTH)
         self.score += cleared_lines * cleared_lines * 100
+        self.cleared_lines += cleared_lines
     
     def get_drop_y(self):
         y = self.current_piece.y
@@ -217,15 +220,17 @@ class Game:
         return out
 
     def _render_sidebar(self, y):
-        if y == 1:
-            return f"   Score: {self.score}"
-        elif y == 2:
-            return f"   Time: {self.get_playtime():.1f}s"
-        elif 4 <= y < 8:
+        sidebar = {
+            1: f"   Level: {self.level}",
+            2: f"   Score: {self.score}",
+            18: f"   Time: {self.get_playtime():.1f}s",
+        }
+        if y in sidebar:
+            return sidebar[y]
+        elif 4 <= y < 7:
             pj = y - 4
             return "   " + self._render_preview_row(pj)
-        else:
-            return ""
+        return ""
 
     def _render_preview_row(self, j):
         if not self.next_piece:
