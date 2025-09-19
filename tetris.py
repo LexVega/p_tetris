@@ -74,6 +74,11 @@ def bag_piece_generator() -> Iterator[Piece]:
 class Game:
     WIDTH = 10
     HEIGHT = 20
+    
+    PREVIEW_BOX_START_LINE = 4
+    PREVIEW_BOX_SIZE = 4
+    PREVIEW_BOX_END_LINE = PREVIEW_BOX_START_LINE + PREVIEW_BOX_SIZE
+    
     GHOST_PIECE_CHAR = "@"
     
     def __init__(self, piece_generator: Callable[[], Iterator[Piece]]):
@@ -227,16 +232,16 @@ class Game:
         }
         if y in sidebar:
             return sidebar[y]
-        elif 4 <= y < 7:
-            pj = y - 4
+        elif self.PREVIEW_BOX_START_LINE <= y < self.PREVIEW_BOX_END_LINE:
+            pj = y - self.PREVIEW_BOX_START_LINE
             return "   " + self._render_preview_row(pj)
         return ""
 
     def _render_preview_row(self, j):
         if not self.next_piece:
-            return " " * 4
+            return " " * self.PREVIEW_BOX_SIZE
 
-        preview_box = [[" "] * 4 for _ in range(4)]
+        preview_box = [[" "] * self.PREVIEW_BOX_SIZE for _ in range(self.PREVIEW_BOX_SIZE)]
         for y, row in enumerate(self.next_piece.shape):
             for x, cell in enumerate(row):
                 if cell != " ":
@@ -249,7 +254,6 @@ class Game:
             else:
                 out += " "
         return out
-
 
 
 class Input:
