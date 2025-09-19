@@ -64,6 +64,13 @@ def random_piece_generator() -> Iterator[Piece]:
     while True:
         yield Piece(random.choice(list(Piece.FIGURES)))
 
+def bag_piece_generator() -> Iterator[Piece]:
+    while True:
+        bag = [Piece(kind) for kind in Piece.FIGURES]
+        random.shuffle(bag)
+        for piece in bag:
+            yield piece
+
 class Game:
     WIDTH = 10
     HEIGHT = 20
@@ -298,7 +305,7 @@ class Input:
             return last
 
 key_reader = Input()
-game = Game(random_piece_generator)
+game = Game(bag_piece_generator)
 game.spawn_piece()
 
 gravity_interval = 0.3
