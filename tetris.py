@@ -79,6 +79,9 @@ class Game:
     
     H_BORDER = "+" + "-" * WIDTH + "+"
     W_BORDER_CHAR = "|"
+    LEVEL_LINE = 1
+    SCORE_LINE = 2
+    TIME_LINE = 18
     PREVIEW_BOX_START_LINE = 4
     PREVIEW_BOX_SIZE = 4
     PREVIEW_BOX_END_LINE = PREVIEW_BOX_START_LINE + PREVIEW_BOX_SIZE
@@ -88,7 +91,7 @@ class Game:
     
     def __init__(self, piece_generator: Callable[[], Iterator[Piece]]):
         self.field = [[" "] * self.WIDTH for _ in range(self.HEIGHT)]
-        self.piece_gen: PieceGenerator = piece_generator()
+        self.piece_gen: Iterator[Piece] = piece_generator()
         self.next_piece: Piece | None = None
         self.current_piece = None
         self.game_over = False
@@ -230,9 +233,9 @@ class Game:
 
     def _render_sidebar(self, y):
         sidebar = {
-            1: f"   Level: {self.level}",
-            2: f"   Score: {self.score}",
-            18: f"   Time: {self.get_playtime():.1f}s",
+            self.LEVEL_LINE: f"   Level: {self.level}",
+            self.SCORE_LINE: f"   Score: {self.score}",
+            self.TIME_LINE: f"   Time: {self.get_playtime():.1f}s",
         }
         if y in sidebar:
             return sidebar[y]
