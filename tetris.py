@@ -5,6 +5,9 @@ import select
 import random
 import os
 
+from collections.abc import Iterator, Callable
+
+
 if sys.platform.startswith('win'):
     import msvcrt
 else:
@@ -12,6 +15,16 @@ else:
     import termios
 
 CLEAR = 'cls' if os.name == 'nt' else 'clear'
+COLORS = {
+    'I': "\033[96m",  # Cyan
+    'O': "\033[93m",  # Yellow
+    'T': "\033[95m",  # Magenta
+    'S': "\033[92m",  # Green
+    'Z': "\033[91m",  # Red
+    'J': "\033[94m",  # Blue
+    'L': "\033[33m",  # Orange-ish
+    'RESET': "\033[0m",
+}
 
 class Piece:
     FIGURES = {
@@ -46,29 +59,19 @@ class Piece:
     def rotated(self):
         """Return rotated shape (clockwise) without modifying self"""
         return [list(row) for row in zip(*self.shape[::-1])]
-    
-    @classmethod
-    def random(self):
-        return self(random.choice(list(self.FIGURES)))
 
-COLORS = {
-    'I': "\033[96m",  # Cyan
-    'O': "\033[93m",  # Yellow
-    'T': "\033[95m",  # Magenta
-    'S': "\033[92m",  # Green
-    'Z': "\033[91m",  # Red
-    'J': "\033[94m",  # Blue
-    'L': "\033[33m",  # Orange-ish
-    'RESET': "\033[0m",
-}
+def random_piece_generator() -> Iterator[Piece]:
+    while True:
+        yield Piece(random.choice(list(Piece.FIGURES)))
 
 class Game:
     WIDTH = 10
     HEIGHT = 20
     GHOST_PIECE_CHAR = "@"
     
-    def __init__(self):
+    def __init__(self, piece_generator: Callable[[], Iterator[Piece]]):
         self.field = [[" "] * self.WIDTH for _ in range(self.HEIGHT)]
+        self.piece_gen: PieceGenerator = piece_generator()
         self.next_piece: Piece | None = None
         self.current_piece = None
         self.game_over = False
@@ -84,8 +87,8 @@ class Game:
         return time.perf_counter() - self.game_started_at
     
     def spawn_piece(self):
-        self.current_piece = self.next_piece or Piece.random()
-        self.next_piece = Piece.random()
+        self.current_piece = self.next_piece or next(self.piece_gen) #.get()
+        self.next_piece = next(self.piece_gen)#.get()
         self.current_piece.x = (self.WIDTH - self.current_piece.width) // 2
         self.current_piece.y = 0
         if not self.can_move(0, 0):
@@ -295,7 +298,7 @@ class Input:
             return last
 
 key_reader = Input()
-game = Game()
+game = Game(random_piece_generator)
 game.spawn_piece()
 
 gravity_interval = 0.3
