@@ -112,8 +112,8 @@ class Game:
         self.current_piece = self.next_piece or next(self.piece_gen) #.get()
         self.next_piece = next(self.piece_gen)#.get()
         self.current_piece.x = (self.WIDTH - self.current_piece.width) // 2
-        self.current_piece.y = 0
-        if not self.can_move(0, 0):
+        self.current_piece.y = -2
+        if not self.can_move(1, 1):
             self.game_over = True
     
     def rotate(self):
@@ -158,7 +158,9 @@ class Game:
         for j, row in enumerate(self.current_piece.shape):
             for i, cell in enumerate(row):
                 if cell != ' ':
-                    self.field[self.current_piece.y + j][self.current_piece.x + i] = cell
+                    ny = self.current_piece.y + j
+                    nx = self.current_piece.x + i
+                    self.field[ny][nx] = cell
     
     def clear_lines(self):
         new_field = [row for row in self.field if any(c == " " for c in row)]
@@ -356,6 +358,6 @@ while not game.game_over:
     
     if game.is_changed:
         game.draw()
-        
+    
     time.sleep(REFRESH_RATE)
     
