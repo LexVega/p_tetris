@@ -94,27 +94,45 @@ class Game:
         self.piece_gen: Iterator[Piece] = piece_generator()
         self.next_piece: Piece | None = None
         self.current_piece = None
+        self.preview_box = []
         self.game_over = False
         self.game_started_at = time.perf_counter()
         self.score = 0
         self.cleared_lines = 0
         self.level = 1
-        self._changed = False
-    
-    @property
-    def is_changed(self):
-        return self._changed
+        self.redraw_required = False
     
     def get_playtime(self):
         return time.perf_counter() - self.game_started_at
     
+    def get_spawning_pos(self):
+        x = (self.WIDTH - self.current_piece.width) // 2
+        y = -2
+        return x, y
+    
+    def update_level(self):
+        difficulty_up_every_x_lines = 10
+        new_level = 1 + self.cleared_lines // difficulty_up_every_x_lines
+        if new_level > self.level:
+            self.level = new_level
+        
     def spawn_piece(self):
-        self.current_piece = self.next_piece or next(self.piece_gen) #.get()
-        self.next_piece = next(self.piece_gen)#.get()
-        self.current_piece.x = (self.WIDTH - self.current_piece.width) // 2
-        self.current_piece.y = -2
+        self.current_piece = self.next_piece or next(self.piece_gen)
+        self.current_piece.x, self.current_piece.y = self.get_spawning_pos()
+        self.next_piece = next(self.piece_gen)
+        self.update_preview_box()
+        
         if not self.can_move(1, 1):
             self.game_over = True
+    
+    def update_preview_box(self):
+        self.preview_box = [[" "] * self.PREVIEW_BOX_SIZE for _ in range(self.PREVIEW_BOX_SIZE)]
+        if not self.next_piece:
+            return
+        for y, row in enumerate(self.next_piece.shape):
+            for x, cell in enumerate(row):
+                if cell != " ":
+                    self.preview_box[y][x] = cell
     
     def rotate(self):
         rotated = self.current_piece.rotated
@@ -125,26 +143,24 @@ class Game:
                 self.current_piece.x += dx
                 self.current_piece.y += dy
                 self.current_piece.shape = rotated
-                self._changed = True
+                self.redraw_required = True
                 break
     
-    def can_move(self, dx=0, dy=0, shape=None, x=None, y=None):
+    def can_move(self, dx=0, dy=0, shape=None):
         """
         Check if `shape` can be placed at (x+dx, y+dy).
         Defaults: current shape, current position.
         """
         shape = shape or self.current_piece.shape
-        x = self.current_piece.x if x is None else x
-        y = self.current_piece.y if y is None else y
     
-        for j, row in enumerate(shape):
-            for i, cell in enumerate(row):
+        for row_idx, row in enumerate(shape):
+            for col_idx, cell in enumerate(row):
                 if cell != ' ':
-                    nx = x + i + dx
-                    ny = y + j + dy
-                    if nx < 0 or nx >= self.WIDTH or ny >= self.HEIGHT:
+                    board_x = self.current_piece.x + col_idx + dx
+                    board_y = self.current_piece.y + row_idx + dy
+                    if board_x < 0 or board_x >= self.WIDTH or board_y >= self.HEIGHT:
                         return False
-                    if ny >= 0 and self.field[ny][nx] != ' ':
+                    if board_y >= 0 and self.field[board_y][board_x] != ' ':
                         return False
         return True
     
@@ -152,15 +168,16 @@ class Game:
         if x or y:
             self.current_piece.x += x
             self.current_piece.y += y
-            self._changed = True
+            self.redraw_required = True
         
     def merge(self):
-        for j, row in enumerate(self.current_piece.shape):
-            for i, cell in enumerate(row):
-                if cell != ' ':
-                    ny = self.current_piece.y + j
-                    nx = self.current_piece.x + i
-                    self.field[ny][nx] = cell
+        targets = []
+        for row_idx, row in enumerate(self.current_piece.shape):
+            for col_idx, cell in enumerate(row):
+                if cell == ' ': continue
+                board_y = self.current_piece.y + row_idx
+                board_x = self.current_piece.x + col_idx
+                self.field[board_y][board_x] = cell
     
     def clear_lines(self):
         new_field = [row for row in self.field if any(c == " " for c in row)]
@@ -168,93 +185,86 @@ class Game:
         self.field = [[' '] * self.WIDTH for _ in range(cleared_lines)] + new_field
         self.score += cleared_lines * cleared_lines * 100
         self.cleared_lines += cleared_lines
+        if cleared_lines:
+            self.update_level()
     
     def get_drop_y(self):
         y = self.current_piece.y
-        while self.can_move(0, y - self.current_piece.y + 1):
+        while self.can_move(dy=y + 1 - self.current_piece.y):
             y += 1
         return y
-        
-    def process(self):
+    
+    def tick_physics(self):
         if self.can_move(0, 1):
             self.current_piece.y += 1
         else:
             self.merge()
             self.clear_lines()
             self.spawn_piece()
-        self._changed = True
+        self.redraw_required = True
 
     def draw(self):
         os.system(CLEAR)
-        temp = self._compose_field_with_current_piece()
-
+        buffer = [row[:] for row in self.field]
+        self._overlay_current_piece(buffer)
+        self._overlay_ghost_piece(buffer)
+        
         print(self.H_BORDER)
-
-        for y in range(self.HEIGHT):
-            row_str = self._render_field_row(temp[y])
-            row_str += self._render_sidebar(y)
-            print(row_str)
-
+        for idx, row in enumerate(buffer):
+            row = [self.W_BORDER_CHAR, *self._colorize_row(row), self.W_BORDER_CHAR, self._get_sidebar_line(idx)]
+            print(''.join(row))
         print(self.H_BORDER)
-        self._changed = False
+        
+        self.redraw_required = False
+    
+    def _overlay_current_piece(self, temp):
+        for row_idx, row in enumerate(self.current_piece.shape):
+            for col_idx, cell in enumerate(row):
+                if cell != " " and 0 <= self.current_piece.y + row_idx < self.HEIGHT:
+                    temp[self.current_piece.y + row_idx][self.current_piece.x + col_idx] = cell
 
-    def _compose_field_with_current_piece(self):
-        temp = [row[:] for row in self.field]
-
-        # ghost piece
+    def _overlay_ghost_piece(self, temp):
         ghost_y = self.get_drop_y()
-        for j, row in enumerate(self.current_piece.shape):
-            for i, cell in enumerate(row):
+        for row_idx, row in enumerate(self.current_piece.shape):
+            for col_idx, cell in enumerate(row):
                 if cell != " ":
-                    gy = ghost_y + j
-                    gx = self.current_piece.x + i
+                    gy = ghost_y + row_idx
+                    gx = self.current_piece.x + col_idx
                     if 0 <= gy < self.HEIGHT and temp[gy][gx] == " ":
                         temp[gy][gx] = self.GHOST_CHAR
-
-        # current piece
-        for j, row in enumerate(self.current_piece.shape):
-            for i, cell in enumerate(row):
-                if cell != " " and 0 <= self.current_piece.y + j < self.HEIGHT:
-                    temp[self.current_piece.y + j][self.current_piece.x + i] = cell
-
-        return temp
-
-    def _render_field_row(self, row):
-        out = ''
+    
+    
+    def _colorize_row(self, row):
+        new_row = []
         for char in row:
             if char in COLORS:
-                out += f"{COLORS[char]}{self.FIG_CHAR}{COLORS['RESET']}"
+                new_row.append(f"{COLORS[char]}{self.FIG_CHAR}{COLORS['RESET']}")
             elif char == self.GHOST_CHAR:
-                out += f"{COLORS['RESET']}{self.GHOST_CHAR}{COLORS['RESET']}"
+                new_row.append(f"{COLORS['RESET']}{self.GHOST_CHAR}{COLORS['RESET']}")
             else:
-                out += " "
-        return self.W_BORDER_CHAR + out + self.W_BORDER_CHAR
-
-    def _render_sidebar(self, y):
-        sidebar = {
+                new_row.append(char)
+        return new_row
+    
+    def _get_sidebar_line(self, idx):
+        lines = {
             self.LEVEL_LINE: f"   Level: {self.level}",
             self.SCORE_LINE: f"   Score: {self.score}",
             self.TIME_LINE: f"   Time: {self.get_playtime():.1f}s",
         }
-        if y in sidebar:
-            return sidebar[y]
-        elif self.PREVIEW_BOX_START_LINE <= y < self.PREVIEW_BOX_END_LINE:
-            pj = y - self.PREVIEW_BOX_START_LINE
-            return "   " + self._render_preview_row(pj)
-        return ""
+        if idx in lines:
+            return lines[idx]
+        elif self.PREVIEW_BOX_START_LINE <= idx < self.PREVIEW_BOX_END_LINE:
+            pj = idx - self.PREVIEW_BOX_START_LINE
+            return "   " + self._get_preview_row(pj)
+        else:
+            return ''
 
-    def _render_preview_row(self, j):
-        if not self.next_piece:
+    def _get_preview_row(self, j):
+        if not self.preview_box:
             return " " * self.PREVIEW_BOX_SIZE
 
-        preview_box = [[" "] * self.PREVIEW_BOX_SIZE for _ in range(self.PREVIEW_BOX_SIZE)]
-        for y, row in enumerate(self.next_piece.shape):
-            for x, cell in enumerate(row):
-                if cell != " ":
-                    preview_box[y][x] = cell
-
         out = ""
-        for c in preview_box[j]:
+        for c in self.preview_box[j]:
             if c in COLORS:
                 out += f"{COLORS[c]}{self.FIG_CHAR}{COLORS['RESET']}"
             else:
@@ -348,15 +358,15 @@ while not game.game_over:
         elif key == 'SPACE':
             while game.can_move(dy=1):
                 game.move(y=1)
-            game.process()
+            game.tick_physics()
             acc = 0
     
     # Handle gravity
     if acc >= gravity_interval:
         acc -= gravity_interval
-        game.process()
+        game.tick_physics()
     
-    if game.is_changed:
+    if game.redraw_required:
         game.draw()
     
     time.sleep(REFRESH_RATE)
