@@ -1,5 +1,6 @@
 import os
 from collections.abc import Iterator, Callable
+from enum import Enum, auto
 from time import perf_counter
 
 from pieces import Piece
@@ -16,6 +17,11 @@ COLORS = {
     'L': "\033[33m",  # Orange-ish
     'RESET': "\033[0m",
 }
+
+class GameState(Enum):
+    RUNNING = auto()
+    LEVEL_UP = auto()
+    GAME_OVER = auto()
 
 class Game:
     WIDTH = 10
@@ -42,7 +48,10 @@ class Game:
         self.next_piece: Piece | None = None
         self.current_piece = None
         self.preview_box = []
-        self.game_over = False
+        
+        self.state: GameState = GameState.RUNNING
+        self.state_timer = 0.0
+        
         self.game_started_at = perf_counter()
         self.score = 0
         self.cleared_lines = 0
@@ -62,6 +71,8 @@ class Game:
         new_level = 1 + self.cleared_lines // difficulty_up_every_x_lines
         if new_level > self.level:
             self.level = new_level
+            self.state = GameState.LEVEL_UP
+            self.state_timer = perf_counter()
         
     def spawn_piece(self):
         self.current_piece = self.next_piece or next(self.piece_gen)
@@ -70,7 +81,30 @@ class Game:
         self.update_preview_box()
         
         if not self.can_move(1, 1):
-            self.game_over = True
+            self.state = GameState.GAME_OVER
+            self.state_timer = perf_counter()
+    
+    def draw_message(self, text: str):
+        os.system(CLEAR)
+        padding = (self.WIDTH // 2 - len(text) // 2)
+        print(self.H_BORDER)
+        for _ in range(self.HEIGHT // 2 - 1):
+            print(self.W_BORDER_CHAR + " " * self.WIDTH + self.W_BORDER_CHAR)
+        print(
+            self.W_BORDER_CHAR
+            + " " * padding
+            + text
+            + " " * (self.WIDTH - padding - len(text))
+            + self.W_BORDER_CHAR
+        )
+        for _ in range(self.HEIGHT // 2 - 1):
+            print(self.W_BORDER_CHAR + " " * self.WIDTH + self.W_BORDER_CHAR)
+        print(self.H_BORDER)
+    
+    def fill_row(self, row, char="#"):
+        if 0 <= row < self.HEIGHT:
+            self.field[row] = [char] * self.WIDTH
+            self.redraw_required = True
     
     def update_preview_box(self):
         self.preview_box = [[" "] * self.PREVIEW_BOX_SIZE for _ in range(self.PREVIEW_BOX_SIZE)]
@@ -145,6 +179,9 @@ class Game:
         return y
     
     def tick_physics(self):
+        if self.state != GameState.RUNNING:
+            return # no physics on other states
+    
         if self.can_move(0, 1):
             self.current_piece.y += 1
         else:
