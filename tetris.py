@@ -89,6 +89,9 @@ class Game:
     GHOST_CHAR = "@"
     FIG_CHAR = "@"
     
+    MIN_GRAVITY = 0.05
+    MAX_GRAVITY = 0.3
+    
     def __init__(self, piece_generator: Callable[[], Iterator[Piece]]):
         self.field = [[" "] * self.WIDTH for _ in range(self.HEIGHT)]
         self.piece_gen: Iterator[Piece] = piece_generator()
@@ -163,6 +166,9 @@ class Game:
                     if board_y >= 0 and self.field[board_y][board_x] != ' ':
                         return False
         return True
+        
+    def get_gravity(self):
+        return max(self.MIN_GRAVITY, self.MAX_GRAVITY - (self.level -1) * 0.02)
     
     def move(self, x: int = 0, y: int = 0):
         if x or y:
@@ -334,7 +340,6 @@ key_reader = Input()
 game = Game(bag_piece_generator)
 game.spawn_piece()
 
-gravity_interval = 0.3
 last = time.perf_counter()
 acc = 0.0
 REFRESH_RATE = 0.01
@@ -362,6 +367,7 @@ while not game.game_over:
             acc = 0
     
     # Handle gravity
+    gravity_interval = game.get_gravity()
     if acc >= gravity_interval:
         acc -= gravity_interval
         game.tick_physics()
