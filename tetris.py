@@ -19,7 +19,7 @@ while True:
     last = now
 
     # --- Handle game states ---
-    if game.state == GameState.LEVEL_UP:
+    if game.is_leveling_up:
         if perf_counter() - game.state_timer < 0.5:
             game.draw_message(f"LEVEL {game.level}!")
             sleep(REFRESH_RATE)
@@ -28,7 +28,7 @@ while True:
             game.state = GameState.RUNNING
             acc = 0.0
 
-    if game.state == GameState.GAME_OVER:
+    elif game.is_game_over:
         original_field = [row[:] for row in game.field]  # save current state
         
         # FILL PHASE (bottom → top)
@@ -42,32 +42,30 @@ while True:
             game.field[y] = original_field[y]
             game.draw()
             sleep(0.05)
-
-        print("GAME OVER")
         break
-
-    # --- Handle input only when RUNNING ---
-    key = key_reader.get_key()
-    if key:
-        if key == 'LEFT' and game.can_move(dx=-1):
-            game.move(x=-1)
-        elif key == 'RIGHT' and game.can_move(dx=1):
-            game.move(x=1)
-        elif key == 'UP':
-            game.rotate()
-        elif key == 'DOWN' and game.can_move(dy=1):
-            game.move(y=1)
-        elif key == 'SPACE':
-            while game.can_move(dy=1):
+    
+    elif game.is_running:
+        key = key_reader.get_key()
+        if key:
+            if key == 'LEFT' and game.can_move(dx=-1):
+                game.move(x=-1)
+            elif key == 'RIGHT' and game.can_move(dx=1):
+                game.move(x=1)
+            elif key == 'UP':
+                game.rotate()
+            elif key == 'DOWN' and game.can_move(dy=1):
                 game.move(y=1)
-            game.tick_physics()
-            acc = 0
+            elif key == 'SPACE':
+                while game.can_move(dy=1):
+                    game.move(y=1)
+                game.tick_physics()
+                acc = 0
 
-    # --- Gravity ---
-    gravity_interval = game.get_gravity()
-    if acc >= gravity_interval:
-        acc -= gravity_interval
-        game.tick_physics()
+        # --- Gravity ---
+        gravity_interval = game.get_gravity()
+        if acc >= gravity_interval:
+            acc -= gravity_interval
+            game.tick_physics()
 
     # --- Redraw ---
     if game.redraw_required:

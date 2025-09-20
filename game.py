@@ -1,12 +1,22 @@
 import os
+import sys
+
 from collections.abc import Iterator, Callable
 from enum import Enum, auto
 from time import perf_counter
 
 from pieces import Piece
 
-
-CLEAR = 'cls' if os.name == 'nt' else 'clear'
+def clear_screen():
+    """
+    Clears the terminal screen in a cross-platform way.
+    """
+    if sys.platform.startswith('win'):
+        os.system('cls')  # For Windows
+    else:
+        # For Linux, macOS, and other Unix-like systems, ANSI escape sequence
+        print("\033[2J\033[H", end='')
+    
 COLORS = {
     'I': "\033[96m",  # Cyan
     'O': "\033[93m",  # Yellow
@@ -27,8 +37,9 @@ class Game:
     WIDTH = 10
     HEIGHT = 20
     
-    H_BORDER = "+" + "-" * WIDTH + "+"
+    H_BORDER = f'+{"-"*WIDTH}+'
     W_BORDER_CHAR = "|"
+    EMPRY_ROW = f'{W_BORDER_CHAR}{" " * WIDTH}{W_BORDER_CHAR}'
     LEVEL_LINE = 1
     SCORE_LINE = 2
     TIME_LINE = 18
@@ -41,6 +52,8 @@ class Game:
     
     MIN_GRAVITY = 0.05
     MAX_GRAVITY = 0.3
+    LEVEL_UP_EVERY_X_LINES = 1
+    KICK_OFFSETS = [(0, 0), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)]
     
     def __init__(self, piece_generator: Callable[[], Iterator[Piece]]):
         self.field = [[" "] * self.WIDTH for _ in range(self.HEIGHT)]
@@ -58,6 +71,18 @@ class Game:
         self.level = 1
         self.redraw_required = False
     
+    @property
+    def is_running(self):
+        return self.state == GameState.RUNNING
+    
+    @property
+    def is_leveling_up(self):
+        return self.state == GameState.LEVEL_UP
+    
+    @property
+    def is_game_over(self):
+        return self.state == GameState.GAME_OVER
+    
     def get_playtime(self):
         return perf_counter() - self.game_started_at
     
@@ -67,8 +92,7 @@ class Game:
         return x, y
     
     def update_level(self):
-        difficulty_up_every_x_lines = 10
-        new_level = 1 + self.cleared_lines // difficulty_up_every_x_lines
+        new_level = 1 + self.cleared_lines // self.LEVEL_UP_EVERY_X_LINES
         if new_level > self.level:
             self.level = new_level
             self.state = GameState.LEVEL_UP
@@ -84,21 +108,20 @@ class Game:
             self.state = GameState.GAME_OVER
             self.state_timer = perf_counter()
     
+    def print_empty_rows(self, times):
+        for _ in range(times): print(self.EMPRY_ROW)
+    
     def draw_message(self, text: str):
-        os.system(CLEAR)
+        half_height = self.HEIGHT // 2 - 1
         padding = (self.WIDTH // 2 - len(text) // 2)
+        padding_left = " " * padding
+        padding_right = " " * (self.WIDTH - padding - len(text))
+        
+        clear_screen()
         print(self.H_BORDER)
-        for _ in range(self.HEIGHT // 2 - 1):
-            print(self.W_BORDER_CHAR + " " * self.WIDTH + self.W_BORDER_CHAR)
-        print(
-            self.W_BORDER_CHAR
-            + " " * padding
-            + text
-            + " " * (self.WIDTH - padding - len(text))
-            + self.W_BORDER_CHAR
-        )
-        for _ in range(self.HEIGHT // 2 - 1):
-            print(self.W_BORDER_CHAR + " " * self.WIDTH + self.W_BORDER_CHAR)
+        self.print_empty_rows(half_height)
+        print(f'{self.W_BORDER_CHAR}{padding_left}{text}{padding_right}{self.W_BORDER_CHAR}')
+        self.print_empty_rows(half_height)
         print(self.H_BORDER)
     
     def fill_row(self, row, char="#"):
@@ -118,8 +141,7 @@ class Game:
     def rotate(self):
         rotated = self.current_piece.rotated
         
-        offsets = [(0, 0), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)]
-        for dx, dy in offsets:
+        for dx, dy in self.KICK_OFFSETS:
             if self.can_move(dx, dy, rotated):
                 self.current_piece.x += dx
                 self.current_piece.y += dy
@@ -191,7 +213,7 @@ class Game:
         self.redraw_required = True
 
     def draw(self):
-        os.system(CLEAR)
+        clear_screen()
         buffer = [row[:] for row in self.field]
         self._overlay_current_piece(buffer)
         self._overlay_ghost_piece(buffer)
@@ -219,7 +241,6 @@ class Game:
                     gx = self.current_piece.x + col_idx
                     if 0 <= gy < self.HEIGHT and temp[gy][gx] == " ":
                         temp[gy][gx] = self.GHOST_CHAR
-    
     
     def _colorize_row(self, row):
         new_row = []
