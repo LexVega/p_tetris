@@ -1,22 +1,11 @@
-import os
-import sys
-
 from collections.abc import Iterator, Callable
 from enum import Enum, auto
 from time import perf_counter
 
 from pieces import Piece
 from colors import Colorizer
+from output import clear_screen
 
-def clear_screen():
-    """
-    Clears the terminal screen in a cross-platform way.
-    """
-    if sys.platform.startswith('win'):
-        os.system('cls')  # For Windows
-    else:
-        # For Linux, macOS, and other Unix-like systems, ANSI escape sequence
-        print("\033[2J\033[H", end='')
 
 class GameState(Enum):
     RUNNING = auto()
