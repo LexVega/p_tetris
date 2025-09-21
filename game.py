@@ -13,12 +13,7 @@ class GameState(Enum):
     GAME_OVER = auto()
 
 class Game:
-    WIDTH = 10
-    HEIGHT = 20
-    
-    H_BORDER = f'+{"-"*WIDTH}+'
     W_BORDER_CHAR = "|"
-    EMPRY_ROW = f'{W_BORDER_CHAR}{" " * WIDTH}{W_BORDER_CHAR}'
     LEVEL_LINE = 1
     SCORE_LINE = 2
     TIME_LINE = 18
@@ -34,8 +29,11 @@ class Game:
     LEVEL_UP_EVERY_X_LINES = 1
     KICK_OFFSETS = [(0, 0), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)]
     
-    def __init__(self, piece_generator: Callable[[], Iterator[Piece]]):
-        self.field = [[" "] * self.WIDTH for _ in range(self.HEIGHT)]
+    def __init__(self, width:int, height: int, piece_generator: Callable[[], Iterator[Piece]]):
+        self.width = width
+        self.height = height
+    
+        self.field = [[" "] * self.width for _ in range(self.height)]
         self.piece_gen: Iterator[Piece] = piece_generator()
         self.next_piece: Piece | None = None
         self.current_piece = None
@@ -78,7 +76,7 @@ class Game:
         return perf_counter() - self.game_started_at
     
     def get_spawning_pos(self):
-        x = (self.WIDTH - self.current_piece.width) // 2
+        x = (self.width - self.current_piece.width) // 2
         y = -2
         return x, y
     
@@ -100,20 +98,23 @@ class Game:
             self.state_timer = perf_counter()
     
     def print_empty_rows(self, times):
-        for _ in range(times): print(self.EMPRY_ROW)
+        for _ in range(times): print(f'{W_BORDER_CHAR}{" " * self.width}{W_BORDER_CHAR}')
+    
+    def print_horizontal_border(self):
+        print(f'+{"-" * self.width}+')
     
     def draw_message(self, text: str):
-        half_height = self.HEIGHT // 2 - 1
-        padding = (self.WIDTH // 2 - len(text) // 2)
+        half_height = self.height // 2 - 1
+        padding = (self.width // 2 - len(text) // 2)
         padding_left = " " * padding
-        padding_right = " " * (self.WIDTH - padding - len(text))
+        padding_right = " " * (self.width - padding - len(text))
         
         clear_screen()
-        print(self.H_BORDER)
+        self.print_horizontal_border()
         self.print_empty_rows(half_height)
         print(f'{self.W_BORDER_CHAR}{padding_left}{text}{padding_right}{self.W_BORDER_CHAR}')
         self.print_empty_rows(half_height)
-        print(self.H_BORDER)
+        self.print_horizontal_border()
     
     def update_preview_box(self):
         self.preview_box = [[" "] * self.PREVIEW_BOX_SIZE for _ in range(self.PREVIEW_BOX_SIZE)]
@@ -147,7 +148,7 @@ class Game:
                 if cell != ' ':
                     board_x = self.current_piece.x + col_idx + dx
                     board_y = self.current_piece.y + row_idx + dy
-                    if board_x < 0 or board_x >= self.WIDTH or board_y >= self.HEIGHT:
+                    if board_x < 0 or board_x >= self.width or board_y >= self.height:
                         return False
                     if board_y >= 0 and self.field[board_y][board_x] != ' ':
                         return False
@@ -173,8 +174,8 @@ class Game:
     
     def clear_lines(self):
         new_field = [row for row in self.field if any(c == " " for c in row)]
-        cleared_lines = self.HEIGHT - len(new_field)
-        self.field = [[' '] * self.WIDTH for _ in range(cleared_lines)] + new_field
+        cleared_lines = self.height - len(new_field)
+        self.field = [[' '] * self.width for _ in range(cleared_lines)] + new_field
         self.score += cleared_lines * cleared_lines * 100
         self.cleared_lines += cleared_lines
         if cleared_lines:
@@ -204,19 +205,19 @@ class Game:
         self._overlay_current_piece(buffer)
         self._overlay_ghost_piece(buffer)
         
-        print(self.H_BORDER)
+        self.print_horizontal_border()
         for idx, row in enumerate(buffer):
             new_row = [self.W_BORDER_CHAR, *row, self.W_BORDER_CHAR, *list(self._get_sidebar_line(idx))]
             new_row = self._colorize_row(new_row)
             print(''.join(new_row))
-        print(self.H_BORDER)
+        self.print_horizontal_border()
         
         self.redraw_required = False
     
     def _overlay_current_piece(self, temp):
         for row_idx, row in enumerate(self.current_piece.shape):
             for col_idx, cell in enumerate(row):
-                if cell != " " and 0 <= self.current_piece.y + row_idx < self.HEIGHT:
+                if cell != " " and 0 <= self.current_piece.y + row_idx < self.height:
                     temp[self.current_piece.y + row_idx][self.current_piece.x + col_idx] = cell
 
     def _overlay_ghost_piece(self, temp):
@@ -226,7 +227,7 @@ class Game:
                 if cell != " ":
                     gy = ghost_y + row_idx
                     gx = self.current_piece.x + col_idx
-                    if 0 <= gy < self.HEIGHT and temp[gy][gx] == " ":
+                    if 0 <= gy < self.height and temp[gy][gx] == " ":
                         temp[gy][gx] = self.GHOST_CHAR
     
     def _colorize_row(self, row):

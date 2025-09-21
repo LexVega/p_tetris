@@ -4,9 +4,11 @@ from pieces import random_piece_generator, bag_piece_generator
 from input import Input
 from game import Game, GameState
 
+GAME_FIELD_WIDTH = 10
+GAME_FIELD_HEIGHT = 20
 
 key_reader = Input()
-game = Game(bag_piece_generator)
+game = Game(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT, bag_piece_generator)
 game.spawn_piece()
 
 last = perf_counter()
@@ -32,13 +34,13 @@ while True:
         original_field = [row[:] for row in game.field]  # save current state
         
         # FILL PHASE (bottom → top)
-        for y in reversed(range(game.HEIGHT)):
+        for y in reversed(range(GAME_FIELD_HEIGHT)):
             game.field[y] = ["#"] * game.WIDTH
             game.draw()
             sleep(0.05)
 
         # EMPTY PHASE (top → bottom)
-        for y in range(game.HEIGHT):
+        for y in range(GAME_FIELD_HEIGHT):
             game.field[y] = original_field[y]
             game.draw()
             sleep(0.05)
