@@ -115,11 +115,6 @@ class Game:
         self.print_empty_rows(half_height)
         print(self.H_BORDER)
     
-    def fill_row(self, row, char="#"):
-        if 0 <= row < self.HEIGHT:
-            self.field[row] = [char] * self.WIDTH
-            self.redraw_required = True
-    
     def update_preview_box(self):
         self.preview_box = [[" "] * self.PREVIEW_BOX_SIZE for _ in range(self.PREVIEW_BOX_SIZE)]
         if not self.next_piece:
