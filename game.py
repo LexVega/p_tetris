@@ -21,20 +21,17 @@ class Colorizer:
     """Handles cross-platform terminal colorization."""
     
     def __init__(self):
-        # Check if we are on Windows AND not a modern terminal
         self.is_windows = sys.platform.startswith('win')
-        # A simple check: if on Windows, assume no color unless we detect a modern terminal.
-        # For simplicity, we can just disable colors on Windows, or be smarter.
-        self.supports_color = not self.is_windows # Simple approach: colors on Unix, off on Win
-        # For a more advanced approach, you could check for Windows Terminal here.
-
+        # For simplicity, no colors in Windows just yet
+        self.supports_color = not self.is_windows
+        # TODO: more advanced approach to tell if windows terminal can run ASCII or not
+    
     def color(self, color_code):
         """Return the color code if supported, else an empty string."""
         if self.supports_color:
             return color_code
         return ""
-
-    # Define your colors as properties or methods
+    
     @property
     def cyan(self):
         return self.color("\033[96m")
@@ -66,17 +63,6 @@ class Colorizer:
     @property
     def reset(self):
         return self.color("\033[0m")
-    
-COLORS = {
-    'I': "\033[96m",  # Cyan
-    'O': "\033[93m",  # Yellow
-    'T': "\033[95m",  # Magenta
-    'S': "\033[92m",  # Green
-    'Z': "\033[91m",  # Red
-    'J': "\033[94m",  # Blue
-    'L': "\033[33m",  # Orange-ish
-    'RESET': "\033[0m",
-}
 
 class GameState(Enum):
     RUNNING = auto()
@@ -122,7 +108,7 @@ class Game:
         self.redraw_required = False
         
         self.colorizer = Colorizer() # Initialize color helper
-        self.Colors = { # Redefine the COLORS dict using the colorizer
+        self.Colors = {
             'I': self.colorizer.cyan,
             'O': self.colorizer.yellow,
             'T': self.colorizer.magenta,
