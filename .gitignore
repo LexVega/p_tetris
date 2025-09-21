@@ -1,0 +1,29 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Distribution / build
+dist/
+build/
+*.egg-info/
+
+# Logs and runtime
+*.log
+*.pid
+
+# OS files
+.DS_Store
+Thumbs.db
+
