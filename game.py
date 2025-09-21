@@ -16,6 +16,56 @@ def clear_screen():
     else:
         # For Linux, macOS, and other Unix-like systems, ANSI escape sequence
         print("\033[2J\033[H", end='')
+
+class Colorizer:
+    """Handles cross-platform terminal colorization."""
+    
+    def __init__(self):
+        # Check if we are on Windows AND not a modern terminal
+        self.is_windows = sys.platform.startswith('win')
+        # A simple check: if on Windows, assume no color unless we detect a modern terminal.
+        # For simplicity, we can just disable colors on Windows, or be smarter.
+        self.supports_color = not self.is_windows # Simple approach: colors on Unix, off on Win
+        # For a more advanced approach, you could check for Windows Terminal here.
+
+    def color(self, color_code):
+        """Return the color code if supported, else an empty string."""
+        if self.supports_color:
+            return color_code
+        return ""
+
+    # Define your colors as properties or methods
+    @property
+    def cyan(self):
+        return self.color("\033[96m")
+    
+    @property
+    def yellow(self):
+        return self.color("\033[93m")
+    
+    @property
+    def magenta(self):
+        return self.color("\033[95m")
+    
+    @property
+    def green(self):
+        return self.color("\033[92m")
+    
+    @property
+    def red(self):
+        return self.color("\033[91m")
+    
+    @property
+    def blue(self):
+        return self.color("\033[94m")
+    
+    @property
+    def orange(self):
+        return self.color("\033[33m")
+    
+    @property
+    def reset(self):
+        return self.color("\033[0m")
     
 COLORS = {
     'I': "\033[96m",  # Cyan
@@ -70,6 +120,18 @@ class Game:
         self.cleared_lines = 0
         self.level = 1
         self.redraw_required = False
+        
+        self.colorizer = Colorizer() # Initialize color helper
+        self.Colors = { # Redefine the COLORS dict using the colorizer
+            'I': self.colorizer.cyan,
+            'O': self.colorizer.yellow,
+            'T': self.colorizer.magenta,
+            'S': self.colorizer.green,
+            'Z': self.colorizer.red,
+            'J': self.colorizer.blue,
+            'L': self.colorizer.orange,
+            'RESET': self.colorizer.reset,
+        }
     
     @property
     def is_running(self):
@@ -220,8 +282,9 @@ class Game:
         
         print(self.H_BORDER)
         for idx, row in enumerate(buffer):
-            row = [self.W_BORDER_CHAR, *self._colorize_row(row), self.W_BORDER_CHAR, self._get_sidebar_line(idx)]
-            print(''.join(row))
+            new_row = [self.W_BORDER_CHAR, *row, self.W_BORDER_CHAR, *list(self._get_sidebar_line(idx))]
+            new_row = self._colorize_row(new_row)
+            print(''.join(new_row))
         print(self.H_BORDER)
         
         self.redraw_required = False
@@ -245,25 +308,26 @@ class Game:
     def _colorize_row(self, row):
         new_row = []
         for char in row:
-            if char in COLORS:
-                new_row.append(f"{COLORS[char]}{self.FIG_CHAR}{COLORS['RESET']}")
+            if char in self.Colors:
+                new_row.append(f"{self.Colors[char]}{self.FIG_CHAR}{self.Colors['RESET']}")
             elif char == self.GHOST_CHAR:
-                new_row.append(f"{COLORS['RESET']}{self.GHOST_CHAR}{COLORS['RESET']}")
+                new_row.append(f"{self.Colors['RESET']}{self.GHOST_CHAR}{self.Colors['RESET']}")
             else:
                 new_row.append(char)
         return new_row
     
     def _get_sidebar_line(self, idx):
+        padding = '   '
         lines = {
-            self.LEVEL_LINE: f"   Level: {self.level}",
-            self.SCORE_LINE: f"   Score: {self.score}",
-            self.TIME_LINE: f"   Time: {self.get_playtime():.1f}s",
+            self.LEVEL_LINE: f"{padding}level: {self.level}",
+            self.SCORE_LINE: f"{padding}score: {self.score}",
+            self.TIME_LINE: f"{padding}time: {self.get_playtime():.1f}s",
         }
         if idx in lines:
             return lines[idx]
         elif self.PREVIEW_BOX_START_LINE <= idx < self.PREVIEW_BOX_END_LINE:
             pj = idx - self.PREVIEW_BOX_START_LINE
-            return "   " + self._get_preview_row(pj)
+            return f'{padding}{self._get_preview_row(pj)}'
         else:
             return ''
 
@@ -273,8 +337,5 @@ class Game:
 
         out = ""
         for c in self.preview_box[j]:
-            if c in COLORS:
-                out += f"{COLORS[c]}{self.FIG_CHAR}{COLORS['RESET']}"
-            else:
-                out += " "
+            out += c if c != " " else " "
         return out
