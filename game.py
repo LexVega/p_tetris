@@ -98,7 +98,7 @@ class Game:
             self.state_timer = perf_counter()
     
     def print_empty_rows(self, times):
-        for _ in range(times): print(f'{W_BORDER_CHAR}{" " * self.width}{W_BORDER_CHAR}')
+        for _ in range(times): print(f'{self.W_BORDER_CHAR}{" " * self.width}{self.W_BORDER_CHAR}')
     
     def print_horizontal_border(self):
         print(f'+{"-" * self.width}+')
