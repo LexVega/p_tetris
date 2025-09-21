@@ -51,7 +51,7 @@ class Piece:
         self.kind = kind
         self.shape = [list(row) for row in self.SHAPES[kind]]
         self.x = x
-        self.y = x
+        self.y = y
     
     @property
     def width(self):
