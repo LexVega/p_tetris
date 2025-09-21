@@ -1,27 +1,57 @@
 import random
 from collections.abc import Iterator
+from enum import Enum, auto
 
 
-class Piece:
-    FIGURES = {
-        'I': [
+class PieceType(Enum):
+    I = auto()
+    O = auto()
+    T = auto()
+    J = auto()
+    L = auto()
+    S = auto()
+    Z = auto()
+
+FIGURE = list[list[str]]
+
+class Piece:    
+    SHAPES = {
+        PieceType.I: [
         "    ",
         "IIII",
         "    ",
-        ],           
-        'O': ["OO", "OO"],       # O
-        'T': [" T ", "TTT"],     # T
-        'J': ["  J", "JJJ"],     # J
-        'L': ["L  ", "LLL"],     # L
-        'S': ["SS ", " SS"],     # S
-        'Z': [" ZZ", "ZZ "],     # Z
+        ],
+        PieceType.O: [
+        "OO",
+        "OO",
+        ],
+        PieceType.T: [
+        " T ",
+        "TTT",
+        ],
+        PieceType.J: [
+        "  J",
+        "JJJ",
+        ],
+        PieceType.L: [
+        "L  ",
+        "LLL",
+        ],
+        PieceType.S: [
+        "SS ",
+        " SS",
+        ],
+        PieceType.Z: [
+        " ZZ", 
+        "ZZ ",
+        ],
     }
 
-    def __init__(self, kind):
+    def __init__(self, kind: PieceType, x: int = 0, y: int = 0):
         self.kind = kind
-        self.shape = [list(row) for row in self.FIGURES[kind]]
-        self.x = 0
-        self.y = 0
+        self.shape = [list(row) for row in self.SHAPES[kind]]
+        self.x = x
+        self.y = x
     
     @property
     def width(self):
@@ -39,12 +69,13 @@ class Piece:
 
 def random_piece_generator() -> Iterator[Piece]:
     while True:
-        yield Piece(random.choice(list(Piece.FIGURES)))
+        random_kind = random.choice(list(PieceType))
+        yield Piece(random_kind)
 
 def bag_piece_generator() -> Iterator[Piece]:
     while True:
-        bag = [Piece(kind) for kind in Piece.FIGURES]
+        bag = list(PieceType)
         random.shuffle(bag)
-        for piece in bag:
-            yield piece
+        for piece_type in bag:
+            yield Piece(piece_type)
             
