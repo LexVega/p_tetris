@@ -1,4 +1,5 @@
 import random
+
 from collections.abc import Iterator
 from enum import Enum, auto
 
@@ -11,8 +12,6 @@ class PieceType(Enum):
     L = auto()
     S = auto()
     Z = auto()
-
-FIGURE = list[list[str]]
 
 class Piece:    
     SHAPES = {

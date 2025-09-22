@@ -54,7 +54,7 @@ class Game(GameModel):
         return max(self.MIN_GRAVITY, self.MAX_GRAVITY - (self.level -1) * 0.02)
     
     def move(self, x: int = 0, y: int = 0):
-        if x or y:
+        if self.current_piece and (x or y):
             self.current_piece.x += x
             self.current_piece.y += y
             self.redraw_required = True

@@ -38,7 +38,7 @@ class GameModel:
         self.field = [[" "] * self.width for _ in range(self.height)]
         self.piece_gen: Iterator[Piece] = piece_generator()
         self.next_piece: Piece | None = None
-        self.current_piece = None
+        self.current_piece: Piece | None = None
         
         self.state: GameState = GameState.RUNNING
         self.state_timer = 0.0
