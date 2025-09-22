@@ -47,7 +47,6 @@ class GameModel:
         self.score = 0
         self.cleared_lines = 0
         self.level = 1
-        self.redraw_required = False
     
     @property
     def is_running(self):

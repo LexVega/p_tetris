@@ -24,21 +24,7 @@ while True:
     acc += now - last
     last = now
 
-    # --- Handle game states ---
-    if game.is_leveling_up:
-        if perf_counter() - game.state_timer < 0.5:
-            renderer.draw_message(game.snapshot, f"LEVEL {game.level}!")
-            sleep(REFRESH_RATE)
-            continue
-        else:
-            game.state = GameState.RUNNING
-            acc = 0.0
-
-    elif game.is_game_over:
-        renderer.draw_game_over(game.snapshot)
-        break
-    
-    elif game.is_running:
+    if game.is_running:
         key = key_reader.get_key()
         if key:
             if key == 'LEFT' and game.can_move(dx=-1):
@@ -60,10 +46,20 @@ while True:
         if acc >= gravity_interval:
             acc -= gravity_interval
             game.tick_physics()
+    
+    elif game.is_leveling_up:
+        if perf_counter() - game.state_timer < 0.5:
+            renderer.draw_message(game.snapshot, f"LEVEL {game.level}!")
+            sleep(REFRESH_RATE)
+            continue
+        else:
+            game.state = GameState.RUNNING
+            acc = 0.0
 
-    # --- Redraw ---
-    if game.redraw_required:
-        renderer.draw(game.snapshot)
+    elif game.is_game_over:
+        renderer.draw_game_over(game.snapshot)
+        break
 
+    renderer.draw(game.snapshot)
     sleep(REFRESH_RATE)
 

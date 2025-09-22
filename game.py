@@ -29,7 +29,6 @@ class Game(GameModel):
                 self.current_piece.x += dx
                 self.current_piece.y += dy
                 self.current_piece.shape = rotated
-                self.redraw_required = True
                 break
     
     def can_move(self, dx=0, dy=0, shape=None):
@@ -57,7 +56,6 @@ class Game(GameModel):
         if self.current_piece and (x or y):
             self.current_piece.x += x
             self.current_piece.y += y
-            self.redraw_required = True
     
     def merge(self):
         for row_idx, row in enumerate(self.current_piece.shape):
@@ -86,5 +84,4 @@ class Game(GameModel):
             self.merge()
             self.clear_lines()
             self.spawn_piece()
-        self.redraw_required = True
     
