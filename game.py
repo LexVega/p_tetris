@@ -49,9 +49,6 @@ class Game(GameModel):
                         return False
         return True
     
-    def get_gravity(self):
-        return max(self.MIN_GRAVITY, self.MAX_GRAVITY - (self.level -1) * 0.02)
-    
     def move(self, x: int = 0, y: int = 0):
         if self.current_piece and (x or y):
             self.current_piece.x += x
@@ -94,8 +91,7 @@ class Game(GameModel):
         
         if self.state == GameState.RUNNING:
             self._physics_acc += dt
-            gravity_interval = self.get_gravity()
-            if self._physics_acc >= gravity_interval:
+            if self._physics_acc >= self.gravity_interval:
                 self.tick_physics()
         elif self.state == GameState.LEVEL_UP:
             if now - self.state_timer > 0.5:

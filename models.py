@@ -58,6 +58,10 @@ class GameModel:
     @property
     def is_game_over(self):
         return self.state == GameState.GAME_OVER
+
+    @property
+    def gravity_interval(self):
+        return max(self.MIN_GRAVITY, self.MAX_GRAVITY - (self.level -1) * 0.02)
     
     @property
     def playtime(self):
