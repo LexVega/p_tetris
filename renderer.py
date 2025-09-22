@@ -126,17 +126,13 @@ class Renderer:
         if not piece:
             return " " * self.PREVIEW_BOX_SIZE
 
-        # dimensions of the piece
-        h = piece.height
-        w = piece.width
-
         # top offset to center vertically
-        top_padding = (self.PREVIEW_BOX_SIZE - h) // 2
+        top_padding = (self.PREVIEW_BOX_SIZE - piece.height) // 2
         # left offset to center horizontally
-        left_padding = (self.PREVIEW_BOX_SIZE - w) // 2
+        left_padding = (self.PREVIEW_BOX_SIZE - piece.width) // 2
 
         # if j is outside the piece's vertical bounds → empty row
-        if not (top_padding <= j < top_padding + h):
+        if not (top_padding <= j < top_padding + piece.height):
             return " " * self.PREVIEW_BOX_SIZE
 
         # row inside the piece
