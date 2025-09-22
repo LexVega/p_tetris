@@ -7,6 +7,7 @@ from models import GameSnapshot
 
 
 class Renderer:
+    MSG_PADDING_CHAR = ' '
     W_BORDER_CHAR = "|"
     LEVEL_LINE = 1
     SCORE_LINE = 2
@@ -18,7 +19,9 @@ class Renderer:
     GHOST_CHAR = "@"
     FIG_CHAR = "@"
 
-    def __init__(self):
+    def __init__(self, width: int, height: int):
+        self.width = width
+        self.height = height
         self.colorizer = Colorizer()
         self.Colors = {
             'I': self.colorizer.cyan,
@@ -30,7 +33,11 @@ class Renderer:
             'L': self.colorizer.orange,
             'RESET': self.colorizer.reset,
         }
-
+    
+    @property
+    def half_height(self):
+        return self.height // 2
+    
     # --- Public API ---
     def draw(self, snapshot: GameSnapshot):
         """Draw the whole field + sidebar."""
@@ -39,26 +46,21 @@ class Renderer:
         self._overlay_current_piece(temp, snapshot)
         self._overlay_ghost_piece(temp, snapshot)
 
-        self._print_horizontal_border(snapshot.width)
+        self._print_horizontal_border()
         for idx, row in enumerate(temp):
             new_row = [self.W_BORDER_CHAR, *row, self.W_BORDER_CHAR, *list(self._get_sidebar_line(idx, snapshot))]
             new_row = self._colorize_row(new_row)
             print(''.join(new_row))
-        self._print_horizontal_border(snapshot.width)
+        self._print_horizontal_border()
 
-    def draw_message(self, snapshot, text: str):
+    def draw_message(self, text: str):
         """Center a message inside the playfield."""
-        half_height = snapshot.height // 2 - 1
-        padding = (snapshot.width // 2 - len(text) // 2)
-        padding_left = " " * padding
-        padding_right = " " * (snapshot.width - padding - len(text))
-
         clear_screen()
-        self._print_horizontal_border(snapshot.width)
-        self._print_empty_rows(half_height, snapshot.width)
-        print(f'{self.W_BORDER_CHAR}{padding_left}{text}{padding_right}{self.W_BORDER_CHAR}')
-        self._print_empty_rows(half_height, snapshot.width)
-        self._print_horizontal_border(snapshot.width)
+        self._print_horizontal_border()
+        self._print_empty_rows(self.half_height - 1, self.width)
+        self._print_msg(text)
+        self._print_empty_rows(self.half_height - 1, self.width)
+        self._print_horizontal_border()
 
     def draw_game_over(self, snapshot, sleep_time=0.05):
         """
@@ -68,13 +70,13 @@ class Renderer:
         temp_snapshot = deepcopy(snapshot)
         
         # FILL PHASE
-        for y in reversed(range(snapshot.height)):
-            temp_snapshot.field[y] = ["#"] * snapshot.width
+        for y in reversed(range(self.height)):
+            temp_snapshot.field[y] = ["#"] * self.width
             self.draw(temp_snapshot)
             sleep(sleep_time)
 
         # EMPTY PHASE (restore snapshot gradually)
-        for y in range(snapshot.height):
+        for y in range(self.height):
             temp_snapshot.field[y] = snapshot.field[y][:]
             self.draw(temp_snapshot)
             sleep(sleep_time)
@@ -83,7 +85,7 @@ class Renderer:
     def _overlay_current_piece(self, temp, snapshot):
         for row_idx, row in enumerate(snapshot.current_piece.shape):
             for col_idx, cell in enumerate(row):
-                if cell != " " and 0 <= snapshot.current_piece.y + row_idx < snapshot.height:
+                if cell != " " and 0 <= snapshot.current_piece.y + row_idx < self.height:
                     temp[snapshot.current_piece.y + row_idx][snapshot.current_piece.x + col_idx] = cell
 
     def _overlay_ghost_piece(self, temp, snapshot):
@@ -92,7 +94,7 @@ class Renderer:
                 if cell != " ":
                     gy = snapshot.ghost_y + row_idx
                     gx = snapshot.current_piece.x + col_idx
-                    if 0 <= gy < snapshot.height and temp[gy][gx] == " ":
+                    if 0 <= gy < self.height and temp[gy][gx] == " ":
                         temp[gy][gx] = self.GHOST_CHAR
 
     def _colorize_row(self, row):
@@ -149,6 +151,13 @@ class Renderer:
         for _ in range(times):
             print(f'{self.W_BORDER_CHAR}{" " * width}{self.W_BORDER_CHAR}')
 
-    def _print_horizontal_border(self, width):
-        print(f'+{"-" * width}+')
+    def _print_horizontal_border(self):
+        print(f'+{"-" * self.width}+')
+    
+    def _print_msg(self, msg: str):
+        padding = (self.width // 2 - len(msg) // 2)
+        padding_left = self.MSG_PADDING_CHAR * padding
+        padding_right = self.MSG_PADDING_CHAR * (self.width - padding - len(msg))
+        
+        print(f'{self.W_BORDER_CHAR}{padding_left}{msg}{padding_right}{self.W_BORDER_CHAR}')
 

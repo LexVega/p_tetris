@@ -8,9 +8,6 @@ from pieces import Piece
 
 @dataclass
 class GameSnapshot:
-    width: int
-    height: int
-
     field: list[list[str]]
     current_piece: Piece
     next_piece: Piece
@@ -34,7 +31,7 @@ class GameModel:
     def __init__(self, width:int, height: int, piece_generator: Callable[[], Iterator[Piece]]):
         self.width = width
         self.height = height
-    
+        
         self.field = [[" "] * self.width for _ in range(self.height)]
         self.piece_gen: Iterator[Piece] = piece_generator()
         self.next_piece: Piece | None = None
@@ -42,6 +39,8 @@ class GameModel:
         
         self.state: GameState = GameState.RUNNING
         self.state_timer = 0.0
+        self._last_update = 0.0
+        self._physics_acc = 0.0
         
         self.game_started_at = perf_counter()
         self.score = 0
@@ -80,8 +79,6 @@ class GameModel:
     @property
     def snapshot(self):
         return GameSnapshot(
-            width=self.width,
-            height=self.height,
             field=[row[:] for row in self.field],
             current_piece=self.current_piece,
             next_piece=self.next_piece,
@@ -90,3 +87,4 @@ class GameModel:
             score=self.score,
             playtime=self.playtime
         )
+

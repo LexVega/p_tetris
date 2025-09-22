@@ -84,4 +84,42 @@ class Game(GameModel):
             self.merge()
             self.clear_lines()
             self.spawn_piece()
+        
+        self._physics_acc = 0.0
+
+    def update(self):
+        now = perf_counter()
+        dt = now - self._last_update
+        self._last_update = now
+        
+        if self.state == GameState.RUNNING:
+            self._physics_acc += dt
+            gravity_interval = self.get_gravity()
+            if self._physics_acc >= gravity_interval:
+                self.tick_physics()
+        elif self.state == GameState.LEVEL_UP:
+            if now - self.state_timer > 0.5:
+                self.state = GameState.RUNNING
+        elif self.state == GameState.GAME_OVER:
+            pass # no updates
+
+    def process_input(self, key: str | None):
+        if self.state != GameState.RUNNING or not key:
+            return
+
+        if key == 'LEFT' and self.can_move(dx=-1):
+            self.move(x=-1)
+        elif key == 'RIGHT' and self.can_move(dx=1):
+            self.move(x=1)
+        elif key == 'UP':
+            self.rotate()
+        elif key == 'DOWN' and self.can_move(dy=1):
+            self.move(y=1)
+        elif key == 'SPACE':
+            move_by = self.ghost_y - self.current_piece.y
+            self.move(y=move_by)
+            self.tick_physics()
     
+    def start(self):
+        self.spawn_piece()
+        self._last_update = perf_counter()
