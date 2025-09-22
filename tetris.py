@@ -1,14 +1,18 @@
 from time import sleep, perf_counter
 
-from pieces import random_piece_generator, bag_piece_generator
+from pieces import bag_piece_generator
 from input import Input
-from game import Game, GameState
+from models import GameState
+from game import Game
+from renderer import Renderer
 
 GAME_FIELD_WIDTH = 10
 GAME_FIELD_HEIGHT = 20
 
 key_reader = Input()
 game = Game(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT, bag_piece_generator)
+renderer = Renderer()
+
 game.spawn_piece()
 
 last = perf_counter()
@@ -23,7 +27,7 @@ while True:
     # --- Handle game states ---
     if game.is_leveling_up:
         if perf_counter() - game.state_timer < 0.5:
-            game.draw_message(f"LEVEL {game.level}!")
+            renderer.draw_message(game.snapshot, f"LEVEL {game.level}!")
             sleep(REFRESH_RATE)
             continue
         else:
@@ -31,19 +35,7 @@ while True:
             acc = 0.0
 
     elif game.is_game_over:
-        original_field = [row[:] for row in game.field]  # save current state
-        
-        # FILL PHASE (bottom → top)
-        for y in reversed(range(GAME_FIELD_HEIGHT)):
-            game.field[y] = ["#"] * game.WIDTH
-            game.draw()
-            sleep(0.05)
-
-        # EMPTY PHASE (top → bottom)
-        for y in range(GAME_FIELD_HEIGHT):
-            game.field[y] = original_field[y]
-            game.draw()
-            sleep(0.05)
+        renderer.draw_game_over(game.snapshot)
         break
     
     elif game.is_running:
@@ -71,7 +63,7 @@ while True:
 
     # --- Redraw ---
     if game.redraw_required:
-        game.draw()
+        renderer.draw(game.snapshot)
 
     sleep(REFRESH_RATE)
 
