@@ -73,18 +73,21 @@ class Game(GameModel):
         if cleared_lines:
             self.update_level()
     
-    def tick_physics(self):
+    def tick_physics(self, dt: float):
         if self.state != GameState.RUNNING:
             return # no physics on other states
-    
-        if self.can_move(0, 1):
-            self.current_piece.y += 1
-        else:
-            self.merge()
-            self.clear_lines()
-            self.spawn_piece()
         
-        self._physics_acc = 0.0
+        self._physics_acc += dt
+        
+        if self._physics_acc >= self.gravity_interval:
+            if self.can_move(0, 1):
+                self.current_piece.y += 1
+            else:
+                self.merge()
+                self.clear_lines()
+                self.spawn_piece()
+        
+            self._physics_acc = 0.0
 
     def update(self):
         now = perf_counter()
@@ -92,9 +95,7 @@ class Game(GameModel):
         self._last_update = now
         
         if self.state == GameState.RUNNING:
-            self._physics_acc += dt
-            if self._physics_acc >= self.gravity_interval:
-                self.tick_physics()
+            self.tick_physics(dt)
         elif self.state == GameState.LEVEL_UP:
             if now - self.state_timer > 0.5:
                 self.state = GameState.RUNNING
@@ -116,7 +117,7 @@ class Game(GameModel):
         elif action == Action.HARD_DROP:
             move_by = self.ghost_y - self.current_piece.y
             self.move(y=move_by)
-            self.tick_physics()
+            #self.tick_physics()
     
     def start(self):
         self.spawn_piece()
