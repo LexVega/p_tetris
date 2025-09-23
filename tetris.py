@@ -26,6 +26,7 @@ while True:
         renderer.draw_message(f"LEVEL {game.level}!")
     elif game.is_game_over:
         renderer.draw_game_over(game.snapshot)
+        break
     sleep(REFRESH_RATE)
 
 
