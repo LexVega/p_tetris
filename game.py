@@ -1,6 +1,6 @@
 from time import perf_counter
 
-from models import GameModel, GameState
+from models import GameModel, GameState, Action
 from pieces import Piece
 
 
@@ -99,19 +99,19 @@ class Game(GameModel):
         elif self.state == GameState.GAME_OVER:
             pass # no updates
 
-    def process_input(self, key: str | None):
-        if self.state != GameState.RUNNING or not key:
+    def process_input(self, action: Action | None):
+        if self.state != GameState.RUNNING or not action:
             return
 
-        if key == 'LEFT' and self.can_move(dx=-1):
+        if action == Action.MOVE_LEFT and self.can_move(dx=-1):
             self.move(x=-1)
-        elif key == 'RIGHT' and self.can_move(dx=1):
+        elif action == Action.MOVE_RIGHT and self.can_move(dx=1):
             self.move(x=1)
-        elif key == 'UP':
+        elif action == Action.ROTATE:
             self.rotate()
-        elif key == 'DOWN' and self.can_move(dy=1):
+        elif action == Action.SOFT_DROP and self.can_move(dy=1):
             self.move(y=1)
-        elif key == 'SPACE':
+        elif action == Action.HARD_DROP:
             move_by = self.ghost_y - self.current_piece.y
             self.move(y=move_by)
             self.tick_physics()

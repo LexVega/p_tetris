@@ -16,8 +16,8 @@ renderer = Renderer(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT)
 game.start()
 
 while True:
-    key = key_reader.get_key()
-    game.process_input(key)
+    action = key_reader.get_action()
+    game.process_input(action)
     game.update()
 
     if game.is_running:

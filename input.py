@@ -1,6 +1,10 @@
 import sys
 import atexit
 import select
+from enum import Enum, auto
+
+from models import Action
+
 
 if sys.platform.startswith('win'):
     import msvcrt
@@ -8,6 +12,26 @@ else:
     import tty
     import termios
 
+KEY_MAP = {
+    # Windows scan codes
+    'K': Action.MOVE_LEFT,
+    'M': Action.MOVE_RIGHT,
+    'P': Action.SOFT_DROP,
+    'H': Action.ROTATE,
+    
+    # Unix escape sequences
+    '[D': Action.MOVE_LEFT,
+    '[C': Action.MOVE_RIGHT,
+    '[B': Action.SOFT_DROP,
+    '[A': Action.ROTATE,
+    
+    # WASD + Space
+    'a': Action.MOVE_LEFT,
+    'd': Action.MOVE_RIGHT,
+    's': Action.SOFT_DROP,
+    ' ': Action.HARD_DROP,
+    'w': Action.ROTATE,
+}
 
 class Input:
     def __init__(self):
@@ -22,30 +46,9 @@ class Input:
         """Restore input mode on Unix"""
         if not sys.platform.startswith('win'):
             termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
+
     
-    def get_dir_by_char(self, char: str) -> str | None:
-        match char.lower():
-            case 'a': return 'LEFT'
-            case 'd': return 'RIGHT'
-            case 's': return 'DOWN'
-            case 'w': return 'UP'
-            case ' ': return 'SPACE'
-            case _: return None
-    
-    WIN_KEY_MAP = {
-        'K': 'LEFT',
-        'M': 'RIGHT',
-        'P': 'DOWN',
-        'H': 'UP',
-    }
-    UNIX_KEY_MAP = {
-        '[D': 'LEFT',
-        '[C': 'RIGHT',
-        '[B': 'DOWN',
-        '[A': 'UP',
-    }
-    
-    def get_key(self):
+    def get_action(self) -> Action | None:
         """Return LEFT/RIGHT/DOWN/UP or None"""
         last = None
         if sys.platform.startswith('win'):
@@ -53,17 +56,17 @@ class Input:
                 ch = msvcrt.getwch()
                 if ch in ('\x00', '\xe0'):
                     ch2 = msvcrt.getwch()
-                    last = self.WIN_KEY_MAP.get(ch2, None)
+                    last = KEY_MAP.get(ch2, None)
                 else:
-                    last = self.get_dir_by_char(ch)
+                    last = KEY_MAP.get(ch, None)
             return last
         else:
             while select.select([sys.stdin], [], [], 0)[0]:
                 ch = sys.stdin.read(1)
                 if ch == '\x1b':
                     ch2 = sys.stdin.read(2)
-                    last = self.UNIX_KEY_MAP.get(ch2, None)
+                    last = KEY_MAP.get(ch2, None)
                 else:
-                    last = self.get_dir_by_char(ch)
+                    last = KEY_MAP.get(ch, None)
             return last
             

@@ -5,6 +5,12 @@ from time import perf_counter
 
 from pieces import Piece
 
+class Action(Enum):
+    MOVE_LEFT = auto()
+    MOVE_RIGHT = auto()
+    SOFT_DROP = auto()
+    HARD_DROP = auto()
+    ROTATE = auto()
 
 @dataclass
 class GameSnapshot:
