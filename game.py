@@ -49,10 +49,12 @@ class Game(GameModel):
                         return False
         return True
     
-    def move(self, x: int = 0, y: int = 0):
-        if self.current_piece and (x or y):
+    def move(self, x: int = 0, y: int = 0) -> bool:
+        if self.current_piece and (x or y) and self.can_move(dx=x, dy=y):
             self.current_piece.x += x
             self.current_piece.y += y
+            return True
+        return False
     
     def merge(self):
         for row_idx, row in enumerate(self.current_piece.shape):
@@ -103,13 +105,13 @@ class Game(GameModel):
         if self.state != GameState.RUNNING or not action:
             return
 
-        if action == Action.MOVE_LEFT and self.can_move(dx=-1):
+        if action == Action.MOVE_LEFT:
             self.move(x=-1)
-        elif action == Action.MOVE_RIGHT and self.can_move(dx=1):
+        elif action == Action.MOVE_RIGHT:
             self.move(x=1)
         elif action == Action.ROTATE:
             self.rotate()
-        elif action == Action.SOFT_DROP and self.can_move(dy=1):
+        elif action == Action.SOFT_DROP:
             self.move(y=1)
         elif action == Action.HARD_DROP:
             move_by = self.ghost_y - self.current_piece.y
