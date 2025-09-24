@@ -3,7 +3,7 @@ from time import sleep
 
 from output import clear_screen
 from colors import Colorizer
-from game import GameSnapshot
+from snapshot import GameSnapshot
 
 
 class Renderer:

@@ -5,17 +5,8 @@ from time import perf_counter
 
 from input import Action
 from pieces import Piece
+from snapshot import GameSnapshot
 
-
-@dataclass
-class GameSnapshot:
-    field: list[list[str]]
-    current_piece: Piece
-    next_piece: Piece
-    ghost_y: int
-    level: int
-    score: int
-    playtime: float
 
 class GameState(Enum):
     RUNNING = auto()
