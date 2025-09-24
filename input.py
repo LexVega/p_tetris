@@ -3,14 +3,20 @@ import atexit
 import select
 from enum import Enum, auto
 
-from models import Action
-
 
 if sys.platform.startswith('win'):
     import msvcrt
 else:
     import tty
     import termios
+
+
+class Action(Enum):
+    MOVE_LEFT = auto()
+    MOVE_RIGHT = auto()
+    SOFT_DROP = auto()
+    HARD_DROP = auto()
+    ROTATE = auto()
 
 KEY_MAP = {
     # Windows scan codes

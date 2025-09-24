@@ -2,7 +2,6 @@ from time import sleep, perf_counter
 
 from pieces import bag_piece_generator
 from input import Input
-from models import GameState
 from game import Game
 from renderer import Renderer
 
@@ -23,7 +22,7 @@ while True:
     last = now
     
     action = key_reader.get_action()
-    game.process(action, delta)
+    game.process(delta, action)
     
     if game.is_running:
         renderer.draw(game.snapshot)
