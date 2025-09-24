@@ -17,7 +17,7 @@ class Renderer:
     PREVIEW_BOX_END_LINE = PREVIEW_BOX_START_LINE + PREVIEW_BOX_SIZE
         
     GHOST_CHAR = "@"
-    FIG_CHAR = "@"
+    BLOCK_CHAR = "@"
 
     def __init__(self, width: int, height: int):
         self.width = width
@@ -42,12 +42,12 @@ class Renderer:
     def draw(self, snapshot: GameSnapshot):
         """Draw the whole field + sidebar."""
         clear_screen()
-        temp = [row[:] for row in snapshot.field]
-        self._overlay_current_piece(temp, snapshot)
-        self._overlay_ghost_piece(temp, snapshot)
+        field_copy = [row[:] for row in snapshot.field]
+        self._overlay_current_piece(field_copy, snapshot)
+        self._overlay_ghost_piece(field_copy, snapshot)
 
         self._print_horizontal_border()
-        for idx, row in enumerate(temp):
+        for idx, row in enumerate(field_copy):
             new_row = [self.W_BORDER_CHAR, *row, self.W_BORDER_CHAR, *list(self._get_sidebar_line(idx, snapshot))]
             new_row = self._colorize_row(new_row)
             print(''.join(new_row))
@@ -82,26 +82,26 @@ class Renderer:
             sleep(sleep_time)
 
     # --- Internal helpers ---
-    def _overlay_current_piece(self, temp, snapshot):
+    def _overlay_current_piece(self, field_copy, snapshot):
         for row_idx, row in enumerate(snapshot.current_piece.shape):
             for col_idx, cell in enumerate(row):
                 if cell != " " and 0 <= snapshot.current_piece.y + row_idx < self.height:
-                    temp[snapshot.current_piece.y + row_idx][snapshot.current_piece.x + col_idx] = cell
+                    field_copy[snapshot.current_piece.y + row_idx][snapshot.current_piece.x + col_idx] = cell
 
-    def _overlay_ghost_piece(self, temp, snapshot):
+    def _overlay_ghost_piece(self, field_copy, snapshot):
         for row_idx, row in enumerate(snapshot.current_piece.shape):
             for col_idx, cell in enumerate(row):
                 if cell != " ":
                     gy = snapshot.ghost_y + row_idx
                     gx = snapshot.current_piece.x + col_idx
-                    if 0 <= gy < self.height and temp[gy][gx] == " ":
-                        temp[gy][gx] = self.GHOST_CHAR
+                    if 0 <= gy < self.height and field_copy[gy][gx] == " ":
+                        field_copy[gy][gx] = self.GHOST_CHAR
 
     def _colorize_row(self, row):
         new_row = []
         for char in row:
             if char in self.Colors:
-                new_row.append(f"{self.Colors[char]}{self.FIG_CHAR}{self.Colors['RESET']}")
+                new_row.append(f"{self.Colors[char]}{self.BLOCK_CHAR}{self.Colors['RESET']}")
             elif char == self.GHOST_CHAR:
                 new_row.append(f"{self.Colors['RESET']}{self.GHOST_CHAR}{self.Colors['RESET']}")
             else:
