@@ -107,13 +107,13 @@ class Game:
             self.change_state(GameState.GAME_OVER)
     
     def rotate(self):
-        rotated = self.current_piece.rotated
+        rotated_shape = self.current_piece.rotated_shape
         
         for dx, dy in self.KICK_OFFSETS:
-            if self.can_move(dx, dy, rotated):
+            if self.can_move(dx, dy, rotated_shape):
                 self.current_piece.x += dx
                 self.current_piece.y += dy
-                self.current_piece.shape = rotated
+                self.current_piece.shape = rotated_shape
                 break
     
     def can_move(self, dx=0, dy=0, shape=None):
@@ -134,7 +134,7 @@ class Game:
                         return False
         return True
     
-    def move(self, x: int = 0, y: int = 0) -> bool:
+    def move_current_piece(self, x: int = 0, y: int = 0) -> bool:
         if self.current_piece and (x or y) and self.can_move(dx=x, dy=y):
             self.current_piece.x += x
             self.current_piece.y += y
@@ -174,7 +174,7 @@ class Game:
         self._physics_acc += dt
         while self._physics_acc >= self.physics_interval:
             self._physics_acc -= self.physics_interval
-            if not self.move(y=1):
+            if not self.move_current_piece(y=1):
                 self.lock_piece()
     
     def lock_piece(self):
@@ -192,16 +192,16 @@ class Game:
             return
         
         if action == Action.MOVE_LEFT:
-            self.move(x=-1)
+            self.move_current_piece(x=-1)
         elif action == Action.MOVE_RIGHT:
-            self.move(x=1)
+            self.move_current_piece(x=1)
         elif action == Action.ROTATE:
             self.rotate()
         elif action == Action.SOFT_DROP:
-            self.move(y=1)
+            self.move_current_piece(y=1)
         elif action == Action.HARD_DROP:
             move_by = self.ghost_y - self.current_piece.y
-            self.move(y=move_by)
+            self.move_current_piece(y=move_by)
             self.lock_piece()
     
     def start(self):

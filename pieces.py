@@ -61,7 +61,7 @@ class Piece:
         return len(self.shape)
     
     @property
-    def rotated(self):
+    def rotated_shape(self):
         """Return rotated shape (clockwise) without modifying self"""
         return [list(row) for row in zip(*self.shape[::-1])]
 
