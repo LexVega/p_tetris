@@ -15,11 +15,16 @@ game = Game(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT, bag_piece_generator)
 renderer = Renderer(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT)
 game.start()
 
-while True:
-    action = key_reader.get_action()
-    game.process_input(action)
-    game.update()
+last = perf_counter()
 
+while True:
+    now = perf_counter()
+    delta = now - last
+    last = now
+    
+    action = key_reader.get_action()
+    game.process(action, delta)
+    
     if game.is_running:
         renderer.draw(game.snapshot)
     elif game.is_leveling_up:

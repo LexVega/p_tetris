@@ -9,8 +9,7 @@ class Game(GameModel):
         new_level = 1 + self.cleared_lines // self.LEVEL_UP_EVERY_X_LINES
         if new_level > self.level:
             self.level = new_level
-            self.state = GameState.LEVEL_UP
-            self.state_timer = perf_counter()
+            self.change_state(GameState.LEVEL_UP, 0.5)
     
     def spawn_piece(self):
         self.current_piece = self.next_piece or next(self.piece_gen)
@@ -18,8 +17,7 @@ class Game(GameModel):
         self.next_piece = next(self.piece_gen)
         
         if not self.can_move(1, 1):
-            self.state = GameState.GAME_OVER
-            self.state_timer = perf_counter()
+            self.change_state(GameState.GAME_OVER)
     
     def rotate(self):
         rotated = self.current_piece.rotated
@@ -73,41 +71,39 @@ class Game(GameModel):
         if cleared_lines:
             self.update_level()
     
-    def tick_physics(self):
-        if self.state != GameState.RUNNING:
-            return # no physics on other states
+    def change_state(self, new_state: GameState, timer: float = 0.0):
+        if new_state == self._current_state: return
+        self._next_state_timer = perf_counter() + timer if timer else 0.0
+        self._prev_state = self._current_state
+        self._current_state = new_state
+    
+    def _process_state_transitions(self):
+        if self._next_state_timer and self._next_state_timer <= perf_counter():
+            self.change_state(self._prev_state)
         
-        self._physics_acc += self._delta_update
-        
-        if self._physics_acc >= self.gravity_interval:
-            if self.can_move(0, 1):
-                self.current_piece.y += 1
-            else:
-                self.merge()
-                self.clear_lines()
-                self.spawn_piece()
-        
-            self._physics_acc = 0.0
+    def _process_physics(self, dt: float):
+        if not self.is_running: return
+    
+        self._physics_acc += dt
+        while self._physics_acc >= self.physics_interval:
+            self._physics_acc -= self.physics_interval
+            if not self.move(y=1):
+                self.lock_piece()
+    
+    def lock_piece(self):
+        self.merge()
+        self.clear_lines()
+        self.spawn_piece()
 
-    @property
-    def _delta_update(self):
-        return perf_counter() - self._last_update
-
-    def update(self):
-        if self.state == GameState.RUNNING:
-            self.tick_physics()
-        elif self.state == GameState.LEVEL_UP:
-            if self._last_update - self.state_timer > 0.5:
-                self.state = GameState.RUNNING
-        elif self.state == GameState.GAME_OVER:
-            pass # no updates
-        
-        self._last_update = perf_counter()
-
-    def process_input(self, action: Action | None):
-        if self.state != GameState.RUNNING or not action:
+    def process(self, action: Action, dt: float):
+        self._process_state_transitions()
+        self._process_action(action)
+        self._process_physics(dt)
+    
+    def _process_action(self, action: Action | None):
+        if not self.is_running or not action:
             return
-
+        
         if action == Action.MOVE_LEFT:
             self.move(x=-1)
         elif action == Action.MOVE_RIGHT:
@@ -119,8 +115,7 @@ class Game(GameModel):
         elif action == Action.HARD_DROP:
             move_by = self.ghost_y - self.current_piece.y
             self.move(y=move_by)
-            self.tick_physics()
+            self.lock_piece()
     
     def start(self):
         self.spawn_piece()
-        self._last_update = perf_counter()

@@ -43,51 +43,51 @@ class GameModel:
         self.next_piece: Piece | None = None
         self.current_piece: Piece | None = None
         
-        self.state: GameState = GameState.RUNNING
-        self.state_timer = 0.0
-        self._last_update = 0.0
-        self._physics_acc = 0.0
+        self._prev_state: GameState | None = None
+        self._current_state: GameState = GameState.RUNNING
+        self._next_state_timer: float = 0.0
+        self._physics_acc: float = 0.0
         
-        self.game_started_at = perf_counter()
+        self.game_started_at: float = perf_counter()
         self.score = 0
         self.cleared_lines = 0
         self.level = 1
     
     @property
-    def is_running(self):
-        return self.state == GameState.RUNNING
+    def is_running(self) -> bool:
+        return self._current_state == GameState.RUNNING
     
     @property
-    def is_leveling_up(self):
-        return self.state == GameState.LEVEL_UP
+    def is_leveling_up(self) -> bool:
+        return self._current_state == GameState.LEVEL_UP
     
     @property
-    def is_game_over(self):
-        return self.state == GameState.GAME_OVER
+    def is_game_over(self) -> bool:
+        return self._current_state == GameState.GAME_OVER
 
     @property
-    def gravity_interval(self):
+    def physics_interval(self) -> float:
         return max(self.MIN_GRAVITY, self.MAX_GRAVITY - (self.level -1) * 0.02)
     
     @property
-    def playtime(self):
+    def playtime(self) -> float:
         return perf_counter() - self.game_started_at
     
     @property
-    def spawning_pos(self):
+    def spawning_pos(self) -> tuple[int, int]:
         x = (self.width - self.current_piece.width) // 2
         y = -2
         return x, y
     
     @property
-    def ghost_y(self):
+    def ghost_y(self) -> int:
         y = self.current_piece.y
         while self.can_move(dy=y + 1 - self.current_piece.y):
             y += 1
         return y
     
     @property
-    def snapshot(self):
+    def snapshot(self) -> GameSnapshot:
         return GameSnapshot(
             field=[row[:] for row in self.field],
             current_piece=self.current_piece,
