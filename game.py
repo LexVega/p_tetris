@@ -1,10 +1,10 @@
 from collections.abc import Iterator, Callable
-from dataclasses import dataclass
 from enum import Enum, auto
 from time import perf_counter
 
 from input import Action
 from pieces import Piece
+from field import Field
 from snapshot import GameSnapshot
 
 
@@ -19,11 +19,8 @@ class Game:
     LEVEL_UP_EVERY_X_LINES = 1
     KICK_OFFSETS = [(0, 0), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)]
 
-    def __init__(self, width:int, height: int, piece_generator: Callable[[], Iterator[Piece]]):
-        self.width = width
-        self.height = height
-        
-        self.field = [[" "] * self.width for _ in range(self.height)]
+    def __init__(self, field: Field, piece_generator: Callable[[], Iterator[Piece]]):
+        self.field: Field = field
         self.piece_gen: Iterator[Piece] = piece_generator()
         self.next_piece: Piece | None = None
         self.current_piece: Piece | None = None
@@ -60,21 +57,21 @@ class Game:
     
     @property
     def spawning_pos(self) -> tuple[int, int]:
-        x = (self.width - self.current_piece.width) // 2
+        x = (self.field.width - self.current_piece.width) // 2
         y = -2
         return x, y
     
     @property
     def ghost_y(self) -> int:
         y = self.current_piece.y
-        while self.can_move(dy=y + 1 - self.current_piece.y):
+        while self.field.can_place(self.current_piece, dy=y + 1 - self.current_piece.y):
             y += 1
         return y
     
     @property
     def snapshot(self) -> GameSnapshot:
         return GameSnapshot(
-            field=[row[:] for row in self.field],
+            field=self.field.snapshot,
             current_piece=self.current_piece,
             next_piece=self.next_piece,
             ghost_y=self.ghost_y,
@@ -94,60 +91,25 @@ class Game:
         self.current_piece.x, self.current_piece.y = self.spawning_pos
         self.next_piece = next(self.piece_gen)
         
-        if not self.can_move(1, 1):
+        if not self.field.can_place(self.current_piece, 1, 1): # TODO: do i need x here? 
             self.change_state(GameState.GAME_OVER)
     
     def rotate(self):
-        rotated_shape = self.current_piece.rotated_shape
+        rotated: Piece = self.current_piece.rotated
         
         for dx, dy in self.KICK_OFFSETS:
-            if self.can_move(dx, dy, rotated_shape):
+            if self.field.can_place(rotated, dx, dy):
+                self.current_piece = rotated
                 self.current_piece.x += dx
                 self.current_piece.y += dy
-                self.current_piece.shape = rotated_shape
                 break
     
-    def can_move(self, dx=0, dy=0, shape=None):
-        """
-        Check if `shape` can be placed at (x+dx, y+dy).
-        Defaults: current shape, current position.
-        """
-        shape = shape or self.current_piece.shape
-    
-        for row_idx, row in enumerate(shape):
-            for col_idx, cell in enumerate(row):
-                if cell != ' ':
-                    board_x = self.current_piece.x + col_idx + dx
-                    board_y = self.current_piece.y + row_idx + dy
-                    if board_x < 0 or board_x >= self.width or board_y >= self.height:
-                        return False
-                    if board_y >= 0 and self.field[board_y][board_x] != ' ':
-                        return False
-        return True
-    
     def move_current_piece(self, x: int = 0, y: int = 0) -> bool:
-        if self.current_piece and (x or y) and self.can_move(dx=x, dy=y):
+        if self.current_piece and (x or y) and self.field.can_place(self.current_piece, dx=x, dy=y):
             self.current_piece.x += x
             self.current_piece.y += y
             return True
         return False
-    
-    def merge(self):
-        for row_idx, row in enumerate(self.current_piece.shape):
-            for col_idx, cell in enumerate(row):
-                if cell == ' ': continue
-                board_y = self.current_piece.y + row_idx
-                board_x = self.current_piece.x + col_idx
-                self.field[board_y][board_x] = cell
-    
-    def clear_lines(self):
-        new_field = [row for row in self.field if any(c == " " for c in row)]
-        cleared_lines = self.height - len(new_field)
-        self.field = [[' '] * self.width for _ in range(cleared_lines)] + new_field
-        self.score += cleared_lines * cleared_lines * 100
-        self.cleared_lines += cleared_lines
-        if cleared_lines:
-            self.update_level()
     
     def change_state(self, new_state: GameState, timer: float = 0.0):
         if new_state == self._current_state: return
@@ -169,8 +131,13 @@ class Game:
                 self.lock_piece()
     
     def lock_piece(self):
-        self.merge()
-        self.clear_lines()
+        self.field.merge(self.current_piece)
+        cleared_lines = self.field.clear_lines()
+        if cleared_lines:
+            self.score += cleared_lines * cleared_lines * 100
+            self.cleared_lines += cleared_lines
+            self.update_level()
+        
         self.spawn_piece()
 
     def process(self, dt: float, action: Action | None = None, ):

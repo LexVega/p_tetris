@@ -61,9 +61,15 @@ class Piece:
         return len(self.shape)
     
     @property
-    def rotated_shape(self):
-        """Return rotated shape (clockwise) without modifying self"""
-        return [list(row) for row in zip(*self.shape[::-1])]
+    def rotated(self):
+        """Return new Piece with rotated shape (clockwise)"""
+        new_piece = Piece(
+            kind = self.kind,
+            x = self.x,
+            y = self.y
+        )
+        new_piece.shape = [list(row) for row in zip(*self.shape[::-1])]
+        return new_piece
 
 
 def random_piece_generator() -> Iterator[Piece]:

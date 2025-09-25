@@ -2,6 +2,7 @@ from time import sleep, perf_counter
 
 from pieces import bag_piece_generator
 from input import Input
+from field import Field
 from game import Game
 from renderer import Renderer
 
@@ -10,7 +11,8 @@ GAME_FIELD_HEIGHT = 20
 REFRESH_RATE = 0.01
 
 key_reader = Input()
-game = Game(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT, bag_piece_generator)
+game_field = Field(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT)
+game = Game(game_field, bag_piece_generator)
 renderer = Renderer(GAME_FIELD_WIDTH, GAME_FIELD_HEIGHT)
 game.start()
 

@@ -3,7 +3,7 @@ from time import sleep
 
 from output import clear_screen
 from colors import Colorizer
-from snapshot import GameSnapshot
+from snapshot import GameSnapshot, FieldSnapshot
 
 
 class Renderer:
@@ -42,7 +42,7 @@ class Renderer:
     def draw(self, snapshot: GameSnapshot):
         """Draw the whole field + sidebar."""
         clear_screen()
-        field_copy = [row[:] for row in snapshot.field]
+        field_copy = snapshot.field.grid
         self._overlay_current_piece(field_copy, snapshot)
         self._overlay_ghost_piece(field_copy, snapshot)
 
@@ -67,17 +67,17 @@ class Renderer:
         Fill the field row by row with '#', then empty it back to the snapshot.
         Sidebar is preserved because snapshot is used for the 'emptying' phase.
         """
-        temp_snapshot = deepcopy(snapshot)
+        temp_snapshot: GameSnapshot = deepcopy(snapshot)
         
         # FILL PHASE
         for y in reversed(range(self.height)):
-            temp_snapshot.field[y] = ["#"] * self.width
+            temp_snapshot.field.grid[y] = ["#"] * self.width
             self.draw(temp_snapshot)
             sleep(sleep_time)
 
         # EMPTY PHASE (restore snapshot gradually)
         for y in range(self.height):
-            temp_snapshot.field[y] = snapshot.field[y][:]
+            temp_snapshot.field.grid[y] = snapshot.field.grid[y][:]
             self.draw(temp_snapshot)
             sleep(sleep_time)
 
