@@ -14,7 +14,10 @@ class Field:
                 if cell == ' ': continue
                 board_y = piece.y + row_idx
                 board_x = piece.x + col_idx
-                self.grid[board_y][board_x] = cell
+                
+                # Only write into actual visible grid cells.
+                if 0 <= board_y < self.height and 0 <= board_x < self.width:
+                    self.grid[board_y][board_x] = cell
     
     def clear_lines(self):
         new_field = [row for row in self.grid if any(c == " " for c in row)]
