@@ -55,9 +55,8 @@ class Game:
     def playtime(self) -> float:
         return perf_counter() - self.game_started_at
     
-    @property
-    def spawning_pos(self) -> tuple[int, int]:
-        x = (self.field.width - self.current_piece.width) // 2
+    def get_spawning_pos(self, piece: Piece) -> tuple[int, int]:
+        x = (self.field.width - piece.width) // 2
         y = -2
         return x, y
     
@@ -87,12 +86,14 @@ class Game:
             self.change_state(GameState.LEVEL_UP, 0.5)
     
     def spawn_piece(self):
-        self.current_piece = self.next_piece or next(self.piece_gen)
-        self.current_piece.x, self.current_piece.y = self.spawning_pos
-        self.next_piece = next(self.piece_gen)
+        new_piece = self.next_piece or next(self.piece_gen)
+        new_piece.x, new_piece.y = self.get_spawning_pos(new_piece)
         
-        if not self.field.can_place(self.current_piece, dy=1):
+        if not self.field.can_place(new_piece, dy=1):
             self.change_state(GameState.GAME_OVER)
+        
+        self.current_piece = new_piece
+        self.next_piece = next(self.piece_gen)
     
     def rotate(self):
         rotated: Piece = self.current_piece.rotated
