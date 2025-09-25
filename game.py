@@ -91,7 +91,7 @@ class Game:
         self.current_piece.x, self.current_piece.y = self.spawning_pos
         self.next_piece = next(self.piece_gen)
         
-        if not self.field.can_place(self.current_piece, 1, 1): # TODO: do i need x here? 
+        if not self.field.can_place(self.current_piece, dy=1):
             self.change_state(GameState.GAME_OVER)
     
     def rotate(self):
