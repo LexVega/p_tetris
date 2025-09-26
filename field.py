@@ -26,10 +26,7 @@ class Field:
         return cleared_lines
     
     def can_place(self, piece: Piece, dx=0, dy=0):
-        """
-        Check if `piece` can be placed at (x+dx, y+dy).
-        Defaults: current shape, current position.
-        """
+        """Check if `piece` can be placed at (x+dx, y+dy)."""
     
         for row_idx, row in enumerate(piece.shape):
             for col_idx, cell in enumerate(row):
