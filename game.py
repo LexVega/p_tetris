@@ -55,11 +55,6 @@ class Game:
     def playtime(self) -> float:
         return perf_counter() - self.game_started_at
     
-    def get_spawning_pos(self, piece: Piece) -> tuple[int, int]:
-        x = (self.field.width - piece.width) // 2
-        y = -2
-        return x, y
-    
     @property
     def ghost_y(self) -> int:
         y = self.current_piece.y
@@ -78,6 +73,11 @@ class Game:
             score=self.score,
             playtime=self.playtime
         )
+    
+    def get_spawning_pos(self, piece: Piece) -> tuple[int, int]:
+        x = (self.field.width - piece.width) // 2
+        y = -2
+        return x, y
    
     def update_level(self):
         new_level = 1 + self.cleared_lines // self.LEVEL_UP_EVERY_X_LINES
