@@ -91,6 +91,7 @@ class Game:
         
         if not self.field.can_place(new_piece, dy=1):
             self.change_state(GameState.GAME_OVER)
+            return
         
         self.current_piece = new_piece
         self.next_piece = next(self.piece_gen)
