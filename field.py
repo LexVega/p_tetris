@@ -33,13 +33,13 @@ class Field:
     
         for row_idx, row in enumerate(piece.shape):
             for col_idx, cell in enumerate(row):
-                if cell != ' ':
-                    board_x = piece.x + col_idx + dx
-                    board_y = piece.y + row_idx + dy
-                    if board_x < 0 or board_x >= self.width or board_y >= self.height:
-                        return False
-                    if board_y >= 0 and self.grid[board_y][board_x] != ' ':
-                        return False
+                if cell == ' ': continue
+                board_x = piece.x + col_idx + dx
+                board_y = piece.y + row_idx + dy
+                if board_x < 0 or board_x >= self.width or board_y >= self.height:
+                    return False
+                if board_y >= 0 and self.grid[board_y][board_x] != ' ':
+                    return False
         return True
     
     @property
