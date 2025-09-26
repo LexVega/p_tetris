@@ -7,11 +7,16 @@ class Field:
         self.width = width
         self.height = height
         self.grid = [[" "] * self.width for _ in range(self.height)]
+    
+    @classmethod
+    def is_empty(cls, cell: str):
+        return cell == ' '
         
     def merge(self, piece: Piece):
         for row_idx, row in enumerate(piece.shape):
             for col_idx, cell in enumerate(row):
-                if cell == ' ': continue
+                if self.is_empty(cell):
+                    continue
                 board_y = piece.y + row_idx
                 board_x = piece.x + col_idx
                 
@@ -30,7 +35,8 @@ class Field:
     
         for row_idx, row in enumerate(piece.shape):
             for col_idx, cell in enumerate(row):
-                if cell == ' ': continue
+                if self.is_empty(cell): 
+                    continue
                 board_x = piece.x + col_idx + dx
                 board_y = piece.y + row_idx + dy
                 if board_x < 0 or board_x >= self.width or board_y >= self.height:
