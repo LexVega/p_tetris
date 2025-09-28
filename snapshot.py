@@ -5,7 +5,7 @@ from pieces import Piece
 class FieldSnapshot:
     width: int
     height: int
-    grid: list[list[str]]
+    grid: list[list[int]]
 
 @dataclass
 class GameSnapshot:

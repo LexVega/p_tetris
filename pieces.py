@@ -3,52 +3,57 @@ import random
 from collections.abc import Iterator
 from enum import Enum, auto
 
+EMPTY = 0
 
 class PieceType(Enum):
-    I = auto()
-    O = auto()
-    T = auto()
-    J = auto()
-    L = auto()
-    S = auto()
-    Z = auto()
+    I = 1
+    O = 2
+    T = 3
+    J = 4
+    L = 5
+    S = 6
+    Z = 7
 
 SHAPES = {
     PieceType.I: [
-    "    ",
-    "IIII",
-    "    ",
+        [0, 0, 0, 0],
+        [1, 1, 1, 1],
+        [0, 0, 0, 0],
     ],
     PieceType.O: [
-    "OO",
-    "OO",
+        [1, 1],
+        [1, 1],
     ],
     PieceType.T: [
-    " T ",
-    "TTT",
+        [0, 1, 0],
+        [1, 1, 1]
     ],
     PieceType.J: [
-    "  J",
-    "JJJ",
+        [0, 0, 1],
+        [1, 1, 1],
     ],
     PieceType.L: [
-    "L  ",
-    "LLL",
+        [1, 0, 0],
+        [1, 1, 1],
     ],
     PieceType.S: [
-    "SS ",
-    " SS",
+        [1, 1, 0],
+        [0, 1, 1],
     ],
     PieceType.Z: [
-    " ZZ", 
-    "ZZ ",
+        [0, 1, 1],
+        [1, 1, 0],
     ],
 }
 
 class Piece:
     def __init__(self, kind: PieceType, x: int = 0, y: int = 0):
         self.kind = kind
-        self.shape = [list(row) for row in SHAPES[kind]]
+        self.shape = [
+            [kind.value if c else EMPTY for c in row]
+            for row in SHAPES[kind]
+        ]
+        
         self.x = x
         self.y = y
     
@@ -74,8 +79,7 @@ class Piece:
 
 def random_piece_generator() -> Iterator[Piece]:
     while True:
-        random_kind = random.choice(list(PieceType))
-        yield Piece(random_kind)
+        yield Piece(random.choice(list(PieceType)))
 
 def bag_piece_generator() -> Iterator[Piece]:
     while True:
