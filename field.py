@@ -20,14 +20,13 @@ class Field:
                     self.grid[board_y][board_x] = cell
     
     def clear_lines(self):
-        new_field = [row for row in self.grid if any(c == 0 for c in row)]
+        new_field = [row for row in self.grid if 0 in row]
         cleared_lines = self.height - len(new_field)
         self.grid = [[0] * self.width for _ in range(cleared_lines)] + new_field
         return cleared_lines
     
     def can_place(self, piece: Piece, dx=0, dy=0):
         """Check if `piece` can be placed at (x+dx, y+dy)."""
-    
         for row_idx, row in enumerate(piece.shape):
             for col_idx, cell in enumerate(row):
                 if not cell: 
